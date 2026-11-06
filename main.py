@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن الجديد المعتمد للبوت
+# التوكن المعتمد للبوت
 TOKEN = "9056801472:AAHsVQ8Iwl_pa34_4gAYxakvY5y-r-vEjzU"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
@@ -209,8 +209,31 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "⚠️ يرجى التأكد من اختيار شبكة (BEP20) لضمان وصول التحويل.\n"
             "📸 عند اكتمال الدفع، يرجى إرسال لقطة شاشة (Screenshot) هنا لتوثيق وتأكيد العملية."
         )
-        keyboard = [[InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_data="back_to_main")]]
+        # الأزرار الجديدة المطابقة لصورة الباركود المطلوبة
+        keyboard = [
+            [InlineKeyboardButton("✅ تم الدفع تحقق من العملية", callback_data="deposit_check")],
+            [InlineKeyboardButton("الغاء ورجوع", callback_data="back_to_main")]
+        ]
         await query.edit_message_text(deposit_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif data == "deposit_check":
+        await query.edit_message_text(
+            "⏳ **جاري التحقق من عملية الإيداع...**\n\n"
+            "تم إرسال طلب التحقق الخاص بك إلى الإدارة لمراجعته وتأكيده في أقرب وقت. شكراً لك!",
+            parse_mode="Markdown"
+        )
+        # إشعار للأدمن بأن المستخدم ضغط على زر التحقق من الإيداع
+        admin_notice = (
+            "🔔 **تنبيه: طلب تحقق من إيداع جديد!**\n\n"
+            f"👤 المستثمر: {user.first_name}\n"
+            f"🆔 الآي دي: `{user_id}`\n"
+            f"🔗 اليوزر: {username}\n"
+            "📌 الضغط على: (تم الدفع تحقق من العملية)."
+        )
+        try:
+            await context.bot.send_message(chat_id=ADMIN_ID, text=admin_notice, parse_mode="Markdown")
+        except Exception as e:
+            logger.error(f"فشل إرسال إشعار الإيداع للأدمن: {e}")
 
     elif data == "btn_withdraw":
         withdraw_text = (
