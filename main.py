@@ -67,7 +67,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
 
-# الخطوة 2 و 3: استقبال معرف العملية وعرض البيانات مع الأزرار بشكل سري وآمن
+# الخطوة 2 و 3: استقبال معرف العملية وعرض البيانات مع الأزرار بسرية تامة
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -93,8 +93,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
         else:
-            # رسالة خطأ عامة وثابتة لا تقوم بعرض أو تسريب النص المدخل من قبل المستخدم
-            await msg.reply_text("❌ معرف العملية غير صحيح. يرجى التأكد من إرسال المعرف الصحيح بالمراعاة للسرية والدقة.")
+            # رسالة الخطأ المطلوبة تماماً وبشكل سري
+            await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال المعرف الصحيح")
 
 # معالجة ضغط الأزرار وإرسال الردود النصية المباشرة
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
