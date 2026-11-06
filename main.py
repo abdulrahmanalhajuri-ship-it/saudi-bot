@@ -10,7 +10,7 @@ from telegram.ext import (
     filters,
 )
 
-# جلب التوكن تلقائياً من متغيرات البيئة في Railway لأمان تام
+# جلب التوكن تلقائياً من متغيرات البيئة في Railway (أو ضع التوكن هنا مباشرة للتجربة على Pydroid 3)
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 7912849071
 
@@ -93,7 +93,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
         else:
-            # رسالة الخطأ المطلوبة تماماً وبشكل سري
+            # رسالة الخطأ السرية والمختصرة المطلوبة
             await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال المعرف الصحيح")
 
 # معالجة ضغط الأزرار وإرسال الردود النصية المباشرة
@@ -111,9 +111,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "sub_confirm":
+        # رسالة تأكيد الاشتراك الجديدة بالصيغة المطلوبة
         await context.bot.send_message(
             chat_id=chat_id,
-            text="الباقه غير متوفرة حاليآ\nشكراً لاختياركم شركة تحالف المالية للإستثمار لأي استفسارات فريق الدعم الفني في خدمتكم"
+            text="شكراً لاختياركم شركة تحالف المالية للإستثمار! تم قبول وتأكيد اشتراكك بنجاح. لأي استفسارات، فريق الدعم الفني في خدمتكم"
         )
 
 def main():
