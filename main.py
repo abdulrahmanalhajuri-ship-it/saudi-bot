@@ -20,10 +20,10 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 # قاموس لتتبع حالة كل مستخدم
 user_states = {}
-# قاموس لحفظ بيانات كل مستخدم شخصياً لتظهر له تحت الأزرار
+# قاموس لحفظ بيانات كل مستخدم شخصياً
 user_custom_data = {}
 
-# المتغير العالمي لمعرف العملية الحالي (يبدأ بـ 1235)
+# المتغير العالمي لمعرف العملية الحالي
 current_valid_code = "1235"
 
 def generate_new_code() -> str:
@@ -44,6 +44,17 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (أو تم إنشاؤه في السنوات الأخيرة)"
 
+# أمر خاص بالأدمن لجلب معرف العملية الفعّال حالياً في أي وقت
+async def admin_get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id != ADMIN_ID:
+        return  # تجاهل أي شخص غير الأدمن
+    
+    await update.message.reply_text(
+        f"🔑 **معرف العملية الفعّال حالياً في النظام:**\n`{current_valid_code}`",
+        parse_mode="Markdown"
+    )
+
 # الخطوة 1: استقبال /start وعرض الترحيب
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -63,7 +74,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
 
-# معالجة الرسائل والتحقق الصارم وحفظ بيانات المستخدم
+# معالجة الرسائل والتحقق الصارم
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global current_valid_code
     msg = update.message
@@ -80,10 +91,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("لقد اخترت الأزرار بالفعل ولا يمكنك التكرار.")
         return
 
-    # الحالة الأولى: استقبال بيانات التسجيل والتحقق من بدايتها وحفظها
+    # الحالة الأولى: استقبال بيانات التسجيل وحفظها
     if current_state == "waiting_for_subscription_text":
         if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
-            # حفظ بيانات هذا المستخدم خصيصاً لتعرض له لاحقاً
             user_custom_data[user_id] = text
             user_states[user_id] = "waiting_for_code"
             
@@ -92,12 +102,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة")
         return
 
-    # الحالة الثانية: التحقق من معرف العملية واستهلاكه فوراً وعرض بيانات المستخدم الخاصة به
+    # الحالة الثانية: التحقق من معرف العملية واستهلاكه فوراً
     if current_state == "waiting_for_code":
         if text == current_valid_code:
             user_states[user_id] = "choosing"
             
-            # --- الإستهلاك الفوري للمعرف وتوليد جديد وإرساله للأدمن فوراً ---
+            # حرق المعرف الحالي وتوليد جديد وإرساله للأدمن فوراً
             old_code = current_valid_code
             new_code = generate_new_code()
             current_valid_code = new_code
@@ -107,7 +117,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text=f"🔑 **تم استخدام معرف العملية وإصدار جديد فوراً:**\n\n• المعرف المستهلك: `{old_code}`\n• المعرف الجديد الفعّال الآن: `{new_code}`\n• بواسطة المستخدم: `{user_id}` ({username})",
                 parse_mode="Markdown"
             )
-            # -----------------------------------------------------------------
 
             keyboard = [
                 [
@@ -117,16 +126,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            # استرجاع بيانات المستخدم الشخصية التي أرسلها هو بنفسه لعرضها تحت الأزرار
+            # استرجاع بيانات المستخدم الشخصية لعرضها تحته
             user_specific_data = user_custom_data.get(user_id, "بيانات التسجيل غير متوفرة")
 
-            # عرض بيانات المستخدم الشخصية وتحتها الأزرار الخاصة به
             await msg.reply_text(
                 text=f"إليك بياناتك المسجلة:\n\n{user_specific_data}",
                 reply_markup=reply_markup
             )
         else:
-            # رسالة خطأ معرف العملية
             await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال معرف العملية الصحيح")
 
 # معالجة ضغط الأزرار ومنع التكرار
@@ -140,7 +147,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     username = f"@{user.username}" if user.username else "بدون معرف"
 
-    # التحقق من عدم التكرار
     if user_states.get(user_id) == "completed":
         await query.message.reply_text("لقد اخترت الأزرار بالفعل.")
         return
@@ -161,13 +167,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "sub_confirm":
         user_states[user_id] = "completed"
 
-        # الرد للمستخدم بنجاح الاشتراك
         await context.bot.send_message(
             chat_id=chat_id,
             text="شكراً لاختياركم شركة تحالف المالية للإستثمار! تم قبول وتأكيد اشتراكك بنجاح. لأي استفسارات، فريق الدعم الفني في خدمتكم"
         )
         
-        # إشعار تأكيد الاشتراك للأدمن
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=f"✅ تنبيه: قام شخص بتأكيد اشتراكه بنجاح!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: تأكيد الاشتراك ✔️",
@@ -181,10 +185,11 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("code", admin_get_code))  # أمر خاص للأدمن لجلب المعرف
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بمعالجة البيانات الخاصة بكل مستخدم على حدة...")
+    print("البوت يعمل الآن مع أمر جلب الكود للأدمن...")
     app.run_polling()
 
 if __name__ == "__main__":
