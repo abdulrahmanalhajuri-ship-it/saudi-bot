@@ -94,14 +94,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("لقد اخترت الأزرار بالفعل ولا يمكنك التكرار.")
         return
 
-    # الحالة الأولى: شرط أن تبدأ الرسالة بعبارة "خطوات التسجيل والإشتراك"
+    # الحالة الأولى: التحقق الصارم من بداية رسالة العضو
     if current_state == "waiting_for_subscription_text":
         if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
             user_states[user_id] = "waiting_for_code"
             await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال معرف العملية الخاص بك للمتابعة (مثال: 1235):")
         else:
-            # رسالة التنبيه المطلوبة تماماً كما طلبتها
-            await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة لكي يتأكد النظام من أنك مشترك لدينا بالفعل")
+            # رسالة الخطأ المختصرة التي طلبتها تماماً
+            await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة")
         return
 
     # الحالة الثانية: بانتظار إدخال معرف العملية الصحيح
@@ -193,7 +193,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بالصيغة المطلوبة تماماً ومعرفات العمليات المتجددة...")
+    print("البوت يعمل الآن بالنص المختصر والمعرفات المتجددة...")
     app.run_polling()
 
 if __name__ == "__main__":
