@@ -53,13 +53,13 @@ def estimate_account_age(user_id: int) -> str:
     elif user_id < 100000000:
         return "حساب قديم (بين 2014 - 2016 تقريباً)"
     elif user_id < 500000000:
-        return "حساب متوسط القدَم (بین 2016 - 2019 تقريباً)"
+        return "حساب متوسط القدَم (بين 2016 - 2019 تقريباً)"
     elif user_id < 1000000000:
         return "حساب نشط منذ عدة سنوات (بين 2019 - 2022 تقريباً)"
     else:
         return "حساب حديث نسبياً (أو تم إنشاؤه في السنوات الأخيرة)"
 
-# الخطوة 1: استقبال /start وطلب إرسال بيانات التسجيل من الزبون أولاً
+# الخطوة 1: استقبال /start مع كلام جميل وطلب بيانات التسجيل لدى الشركة
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -68,11 +68,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     age_estimation = estimate_account_age(user_id)
     
     welcome_msg = (
-        f"أهلاً بك في شركة تحالف المالية للإستثمار 🇸🇦\n\n"
-        f"معلومات حسابك:\n"
-        f"• معرفك (ID): `{user_id}`\n"
+        f"🌟 أهلاً بك في شركة تحالف المالية للإستثمار 🇸🇦\n"
+        f"نسعد بانضمامك إلينا لنخطو معاً نحو مستقبل استثماري متميز ومربح.\n\n"
+        f"📊 معلومات حسابك:\n"
+        f"• معرفك الشخصي (ID): `{user_id}`\n"
         f"• تقدير الحساب: {age_estimation}\n\n"
-        f"الرجاء إرسال بيانات التسجيل الخاصة بك الآن (الاسم، رقم الحساب، رقم الجوال، والمبلغ)..."
+        f"✨ الرجاء إدخال بياناتك الخاصة بك عند التسجيل لدى شركتنا (خطوات التسجيل والإشتراك) للمتابعة:"
     )
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
@@ -93,18 +94,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("لقد اخترت الأزرار بالفعل ولا يمكنك التكرار.")
         return
 
-    # الحالة الأولى: البوت ينتظر من الزبون إرسال بيانات/خطوات التسجيل الصحيحة
+    # الحالة الأولى: بانتظار إرسال بيانات التسجيل الصحيحة
     if current_state == "waiting_for_subscription_text":
-        # التحقق مما إذا كانت الرسالة تحتوي على عبارة أو كلمات تدل على خطوات التسجيل
-        if "خطوات التسجيل" in text or "الاسم" in text or "رقم الحساب" in text:
+        if "خطوات التسجيل والإشتراك" in text or "خطوات التسجيل والاشتراك" in text:
             user_states[user_id] = "waiting_for_code"
-            await msg.reply_text("تم استقبال بياناتك بنجاح.\n\nالرجاء إرسال معرف العملية الخاص بك (مثال: 1235):")
+            await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال معرف العملية الخاص بك للمتابعة (مثال: 1235):")
         else:
-            # إذا لم يرسل البيانات الصحيحة، يعرض له الطلب بدقة كما طلبت
-            await msg.reply_text("الرجاء إرسال بيانات التسجيل الخاصة بك الآن (الاسم، رقم الحساب، رقم الجوال، والمبلغ)...")
+            # رسالة التنبيه الأنيقة في حال أرسل نصاً غير صحيح
+            await msg.reply_text("⚠️ يرجى إدخال بياناتك الخاصة بك عند التسجيل لدي شركة تحالف المالية للإستثمار (أرسل رسالة تحتوي على خطوات التسجيل والإشتراك):")
         return
 
-    # الحالة الثانية: البوت ينتظر إدخال معرف العملية الصحيح (مثل 1235)
+    # الحالة الثانية: بانتظار إدخال معرف العملية الصحيح
     if current_state == "waiting_for_code":
         if text == current_valid_code:
             user_states[user_id] = "choosing"
@@ -123,7 +123,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
         else:
-            # رسالة خطأ معرف العملية تظهر حصراً هنا فقط عندما يكون في مرحلة إدخال المعرف
+            # رسالة خطأ معرف العملية تظهر حصراً هنا فقط
             await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال معرف العملية الصحيح")
 
 # معالجة ضغط الأزرار ومنع التكرار وتوليد معرف جديد للأدمن
@@ -193,7 +193,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بالتدقيق الصحيح للخطوات ومعرفات العمليات المتجددة...")
+    print("البوت يعمل الآن بالصياغة الجذابة والمنظمة لكافة المشتركين...")
     app.run_polling()
 
 if __name__ == "__main__":
