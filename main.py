@@ -67,7 +67,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
 
-# الخطوة 2 و 3: استقبال معرف العملية وعرض البيانات مع الأزرار بسرية تامة
+# استقبال معرف العملية وعرض البيانات مع الأزرار
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -76,9 +76,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = msg.text.strip()
 
-    if user_states.get(user_id) == "waiting_for_code":
+    current_state = user_states.get(user_id)
+
+    # إذا كان المستخدم قد أنهى اختياره مسبقاً وحاول إرسال رسائل أخرى
+    if current_state == "completed":
+        await msg.reply_text("لقد تم اختيارك في الأزرار السابقة")
+        return
+
+    if current_state == "waiting_for_code":
         if text == "CSO261104-10RJ4GU85H" or text.startswith("CSO"):
-            user_states[user_id] = "registered"
+            user_states[user_id] = "choosing"
             
             keyboard = [
                 [
@@ -93,10 +100,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
         else:
-            # رسالة الخطأ السرية والمختصرة
             await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال المعرف الصحيح")
 
-# معالجة ضغط الأزرار وإرسال الردود وإشعار الأدمن (المشرف)
+# معالجة ضغط الأزرار ومنع التكرار
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -107,7 +113,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     username = f"@{user.username}" if user.username else "بدون معرف"
 
+    # التحقق مما إذا كان قد اختار مسبقاً
+    if user_states.get(user_id) == "completed":
+        await query.message.reply_text("لقد تم اختيارك في الأزرار السابقة")
+        return
+
     if data == "sub_cancel":
+        user_states[user_id] = "completed"  # تثبيت الحالة أنه اختار انتهى
+        
         # الرد للمستخدم
         await context.bot.send_message(
             chat_id=chat_id,
@@ -116,11 +129,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # إرسال إشعار لك كمدير
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"⚠️ تنبيه: قام مستخدم إلغاء الاشتراك!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: إلغاء الاشتراك ❌",
+            text=f"⚠️ تنبيه: قام شخص بإلغاء الاشتراك!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: إلغاء الاشتراك ❌",
             parse_mode="Markdown"
         )
 
     elif data == "sub_confirm":
+        user_states[user_id] = "completed"  # تثبيت الحالة أنه اختار انتهى
+        
         # الرد للمستخدم
         await context.bot.send_message(
             chat_id=chat_id,
@@ -129,7 +144,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # إرسال إشعار لك كمدير
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"✅ تنبيه: قام مستخدم بتأكيد اشتراكه بنجاح!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: تأكيد الاشتراك ✔️",
+            text=f"✅ تنبيه: قام شخص بتأكيد اشتراكه بنجاح!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: تأكيد الاشتراك ✔️",
             parse_mode="Markdown"
         )
 
@@ -143,7 +158,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بسريّة تامة وإشعارات الأدمن...")
+    print("البوت يعمل الآن بسريّة تامة وإشعارات الأدمن ومنع التكرار...")
     app.run_polling()
 
 if __name__ == "__main__":
