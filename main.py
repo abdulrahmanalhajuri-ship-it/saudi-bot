@@ -78,7 +78,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
 
-# معالجة الرسائل والتحقق الصارم من البداية
+# معالجة الرسائل والتحقق الصارم
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global current_valid_code
     msg = update.message
@@ -88,6 +88,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = msg.text.strip()
     current_state = user_states.get(user_id)
+    username = f"@{update.effective_user.username}" if update.effective_user.username else "بدون معرف"
 
     # إذا كان المستخدم قد أنهى اختياره مسبقاً
     if current_state == "completed":
@@ -98,18 +99,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if current_state == "waiting_for_subscription_text":
         if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
             user_states[user_id] = "waiting_for_code"
-            # تم حذف المثال (1235) بالكامل لتصبح السرية تامة ولا يظهر أي كود
             await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال معرف العملية الخاص بك للمتابعة:")
         else:
-            # رسالة الخطأ المختصرة
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة")
         return
 
-    # الحالة الثانية: بانتظار إدخال معرف العملية الصحيح
+    # الحالة الثانية: التحقق من معرف العملية واستهلاكه فوراً
     if current_state == "waiting_for_code":
         if text == current_valid_code:
             user_states[user_id] = "choosing"
             
+            # --- الإستهلاك الفوري للمعرف وتوليد جديد وإرساله للأدمن فوراً ---
+            old_code = current_valid_code
+            new_code = generate_new_code()
+            current_valid_code = new_code
+
+            # إرسال المعرف الجديد للأدمن في نفس اللحظة التي استخدم فيها العضو الكود
+            await context.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=f"🔑 **تم استخدام معرف العملية وإصدار جديد فوراً:**\n\n• المعرف المستهلك: `{old_code}`\n• المعرف الجديد الفعّال الآن: `{new_code}`\n• بواسطة المستخدم: `{user_id}` ({username})",
+                parse_mode="Markdown"
+            )
+            # -----------------------------------------------------------------
+
             keyboard = [
                 [
                     InlineKeyboardButton("تأكيد الاشتراك", callback_data="sub_confirm"),
@@ -127,9 +139,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # رسالة خطأ معرف العملية
             await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال معرف العملية الصحيح")
 
-# معالجة ضغط الأزرار ومنع التكرار وتوليد معرف جديد للأدمن
+# معالجة ضغط الأزرار ومنع التكرار
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global current_valid_code
     query = update.callback_query
     await query.answer()
     
@@ -159,25 +170,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "sub_confirm":
         user_states[user_id] = "completed"
-        
-        # 1. توليد معرف عملية جديد وتحديثه للبوت فوراً
-        new_code = generate_new_code()
-        current_valid_code = new_code
 
-        # 2. إرسال المعرف الجديد للأدمن حصراً على معرف 7004113433
-        await context.bot.send_message(
-            chat_id=ADMIN_ID,
-            text=f"🔑 **إصدار معرف عملية جديد تلقائياً:**\n\n• المعرف الجديد الفعّال: `{new_code}`\n• تم استهلاك المعرف السابق بواسطة المستخدم: `{user_id}` ({username})",
-            parse_mode="Markdown"
-        )
-
-        # 3. الرد للمستخدم بنجاح الاشتراك
+        # الرد للمستخدم بنجاح الاشتراك
         await context.bot.send_message(
             chat_id=chat_id,
             text="شكراً لاختياركم شركة تحالف المالية للإستثمار! تم قبول وتأكيد اشتراكك بنجاح. لأي استفسارات، فريق الدعم الفني في خدمتكم"
         )
         
-        # 4. إشعار تأكيد الاشتراك للأدمن
+        # إشعار تأكيد الاشتراك للأدمن
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=f"✅ تنبيه: قام شخص بتأكيد اشتراكه بنجاح!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: تأكيد الاشتراك ✔️",
@@ -194,7 +194,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بسرية تامة بدون أي أمثلة معلنة لمعرفات العمليات...")
+    print("البوت يعمل الآن بالاستهلاك الفوري لمعرف العملية وتوليد الجديد للأدمن...")
     app.run_polling()
 
 if __name__ == "__main__":
