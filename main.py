@@ -16,7 +16,7 @@ ADMIN_ID = 7912849071  # معرفك الخاص لتلقي الإشعارات
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# بيانات التسجيل الخاصة بالزبون
+# بيانات التسجيل الخاصة بالزبون (تظهر فقط عند إدخال المعرف الصحيح 1235)
 CUSTOMER_DATA_TEMPLATE = """خطوات التسجيل والإشتراك
 ــــــــــــــــــــــــــــــــــــــ🇸🇦
 الاسم الرباعي :/                                 
@@ -67,7 +67,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
 
-# استقبال معرف العملية وعرض البيانات مع الأزرار
+# استقبال معرف العملية والتحقق منه
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -78,13 +78,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     current_state = user_states.get(user_id)
 
-    # إذا كان المستخدم قد أنهى اختياره مسبقاً وحاول إرسال رسائل أخرى
+    # إذا كان المستخدم قد أنهى اختياره مسبقاً
     if current_state == "completed":
         await msg.reply_text("لقد تم اختيارك في الأزرار السابقة")
         return
 
     if current_state == "waiting_for_code":
-        # تم تغيير المعرف المطلوب إلى 1235
+        # شرط ظهور الأزرار والقالب حصراً عند إدخال المعرف 1235
         if text == "1235":
             user_states[user_id] = "choosing"
             
@@ -101,6 +101,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
         else:
+            # إذا كتب أي شيء آخر (بما فيها المعرف القديم)، تظهر هذه الرسالة فقط ولا تظهر الأزرار
             await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال المعرف الصحيح")
 
 # معالجة ضغط الأزرار ومنع التكرار
@@ -159,7 +160,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بسريّة تامة ومعرف العملية الجديد...")
+    print("البوت يعمل الآن بسريّة تامة وحماية الأزرار...")
     app.run_polling()
 
 if __name__ == "__main__":
