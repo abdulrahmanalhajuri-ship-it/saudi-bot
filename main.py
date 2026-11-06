@@ -67,7 +67,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
 
-# الخطوة 2 و 3: استقبال معرف العملية وعرض البيانات مع الأزرار
+# الخطوة 2 و 3: استقبال معرف العملية وعرض البيانات مع الأزرار بشكل سري وآمن
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -93,7 +93,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
         else:
-            await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال المعرف الصحيح (مثال: CSO261104-10RJ4GU85H):")
+            # رسالة خطأ عامة وثابتة لا تقوم بعرض أو تسريب النص المدخل من قبل المستخدم
+            await msg.reply_text("❌ معرف العملية غير صحيح. يرجى التأكد من إرسال المعرف الصحيح بالمراعاة للسرية والدقة.")
 
 # معالجة ضغط الأزرار وإرسال الردود النصية المباشرة
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -125,7 +126,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن مع ميزة تقدير عمر الحساب وبكفاءة تامة...")
+    print("البوت يعمل الآن بسريّة تامة وبكفاءة عالية...")
     app.run_polling()
 
 if __name__ == "__main__":
