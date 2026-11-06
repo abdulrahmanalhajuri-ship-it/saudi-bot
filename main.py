@@ -23,8 +23,8 @@ user_states = {}
 # قاموس لحفظ بيانات كل مستخدم شخصياً
 user_custom_data = {}
 
-# المتغير العالمي لمعرف العملية الحالي
-current_valid_code = "1235"
+# قائمة الأكواد ومرجعيات العمليات الصالحة (تبدأ بالكود الافتراضي وتستقبل المراجع اليدوية والتلقائية)
+valid_codes = {"1235"}
 
 def generate_new_code() -> str:
     """توليد معرف عملية جديد وعشوائي وآمن"""
@@ -44,16 +44,36 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (أو تم إنشاؤه في السنوات الأخيرة)"
 
-# أمر خاص بالأدمن لجلب معرف العملية الفعّال حالياً في أي وقت
-async def admin_get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# أمر خاص للأدمن لعرض الأكواد والمراجع الفعّالة حالياً
+async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id != ADMIN_ID:
-        return  # تجاهل أي شخص غير الأدمن
+        return
     
+    codes_list = ", ".join(valid_codes)
     await update.message.reply_text(
-        f"🔑 **معرف العملية الفعّال حالياً في النظام:**\n`{current_valid_code}`",
+        f"🔑 **أرقام المراجع وأكواد العملية الفعّالة حالياً:**\n`{codes_list}`",
         parse_mode="Markdown"
     )
+
+# أمر خاص للأدمن لإضافة رقم مرجع إيصال جديد يدوياً (من تطبيق جييب أو غيره)
+async def admin_add_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id != ADMIN_ID:
+        return
+
+    if context.args:
+        new_ref_code = context.args[0]
+        valid_codes.add(new_ref_code)
+        await update.message.reply_text(
+            f"✅ **تمت إضافة رقم مرجع العملية بنجاح!**\n\n• المرجع المضاف: `{new_ref_code}`\n• أصبح جاهزاً ليستخدمه الزبون.",
+            parse_mode="Markdown"
+        )
+    else:
+        await update.message.reply_text(
+            "⚠️ الرجاء كتابة رقم مرجع العملية بعد الأمر.\nمثال: `/addcode 17942081231037`",
+            parse_mode="Markdown"
+        )
 
 # الخطوة 1: استقبال /start وعرض الترحيب
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -76,7 +96,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # معالجة الرسائل والتحقق الصارم
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global current_valid_code
     msg = update.message
     if not msg or not msg.text:
         return
@@ -86,7 +105,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current_state = user_states.get(user_id)
     username = f"@{update.effective_user.username}" if update.effective_user.username else "بدون معرف"
 
-    # إذا كان المستخدم قد أنهى اختياره مسبقاً
     if current_state == "completed":
         await msg.reply_text("لقد اخترت الأزرار بالفعل ولا يمكنك التكرار.")
         return
@@ -102,19 +120,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة")
         return
 
-    # الحالة الثانية: التحقق من معرف العملية واستهلاكه فوراً
+    # الحالة الثانية: التحقق من رقم مرجع العملية واستهلاكه فوراً
     if current_state == "waiting_for_code":
-        if text == current_valid_code:
+        if text in valid_codes:
+            # إزالة المرجع المستخدم فوراً لكي لا يتم استخدامه مرة ثانية (استهلاك فوري)
+            valid_codes.remove(text)
+            
             user_states[user_id] = "choosing"
             
-            # حرق المعرف الحالي وتوليد جديد وإرساله للأدمن فوراً
-            old_code = current_valid_code
-            new_code = generate_new_code()
-            current_valid_code = new_code
+            # توليد كود تلقائي جديد وإضافته للقائمة وإرساله للأدمن
+            auto_new_code = generate_new_code()
+            valid_codes.add(auto_new_code)
 
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
-                text=f"🔑 **تم استخدام معرف العملية وإصدار جديد فوراً:**\n\n• المعرف المستهلك: `{old_code}`\n• المعرف الجديد الفعّال الآن: `{new_code}`\n• بواسطة المستخدم: `{user_id}` ({username})",
+                text=f"🔑 **تم استخدام رقم مرجع العملية بنجاح وإصدار جديد:**\n\n• المرجع المستهلك: `{text}`\n• الكود التلقائي الجديد الفعّال: `{auto_new_code}`\n• بواسطة المستخدم: `{user_id}` ({username})",
                 parse_mode="Markdown"
             )
 
@@ -185,11 +205,12 @@ def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("code", admin_get_code))  # أمر خاص للأدمن لجلب المعرف
+    app.add_handler(CommandHandler("codes", admin_get_codes))  # لعرض كل المراجع والأكواد الفعّالة
+    app.add_handler(CommandHandler("addcode", admin_add_code))  # لإضافة رقم مرجع إيصال يدوي (مثل إيصال جييب)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن مع أمر جلب الكود للأدمن...")
+    print("البوت يعمل الآن مع دعم المراجع اليدوية (مثل إيصالات جييب) والتوليد التلقائي...")
     app.run_polling()
 
 if __name__ == "__main__":
