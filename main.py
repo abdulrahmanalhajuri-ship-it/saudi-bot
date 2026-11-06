@@ -84,7 +84,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if current_state == "waiting_for_code":
-        if text == "CSO261104-10RJ4GU85H" or text.startswith("CSO"):
+        # تم تغيير المعرف المطلوب إلى 1235
+        if text == "1235":
             user_states[user_id] = "choosing"
             
             keyboard = [
@@ -119,7 +120,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if data == "sub_cancel":
-        user_states[user_id] = "completed"  # تثبيت الحالة أنه اختار انتهى
+        user_states[user_id] = "completed"
         
         # الرد للمستخدم
         await context.bot.send_message(
@@ -134,7 +135,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "sub_confirm":
-        user_states[user_id] = "completed"  # تثبيت الحالة أنه اختار انتهى
+        user_states[user_id] = "completed"
         
         # الرد للمستخدم
         await context.bot.send_message(
@@ -158,7 +159,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بسريّة تامة وإشعارات الأدمن ومنع التكرار...")
+    print("البوت يعمل الآن بسريّة تامة ومعرف العملية الجديد...")
     app.run_polling()
 
 if __name__ == "__main__":
