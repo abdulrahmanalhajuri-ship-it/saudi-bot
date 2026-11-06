@@ -14,11 +14,11 @@ from telegram.ext import (
 
 # جلب التوكن تلقائياً من متغيرات البيئة في Railway
 TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك لتلقي المعرفات والإشعارات الجديدة
+ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك لتلقي المعرفات والإشعارات
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# قالب البيانات الثابت الذي يظهر لكل المشتركين عند إدخال المعرف الصحيح
+# قالب البيانات الثابت الذي يظهر بعد إدخال معرف العملية الصحيح
 CUSTOMER_DATA_TEMPLATE = """خطوات التسجيل والإشتراك
 ــــــــــــــــــــــــــــــــــــــ🇸🇦
 الاسم الرباعي :/                                 
@@ -59,11 +59,11 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (أو تم إنشاؤه في السنوات الأخيرة)"
 
-# الخطوة 1: استقبال /start وطلب معرف العملية مباشرة بدون إدخال بيانات يدوية
+# الخطوة 1: استقبال /start وطلب إرسال رسالة التسجيل من الزبون
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
-    user_states[user_id] = "waiting_for_code"
+    user_states[user_id] = "waiting_for_subscription_text"
     
     age_estimation = estimate_account_age(user_id)
     
@@ -72,13 +72,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"معلومات حسابك:\n"
         f"• معرفك (ID): `{user_id}`\n"
         f"• تقدير الحساب: {age_estimation}\n\n"
-        f"يرجى إرسال معرف العملية الخاص بك للمتابعة (مثال: 1235):"
+        f"الرجاء إرسال رسالة تحتوي على (خطوات التسجيل والإشتراك) للمتابعة:"
     )
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
 
-# الخطوة 2: استقبال معرف العملية والتحقق منه
+# معالجة الرسائل والتحقق الصارم من الشروط
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global current_valid_code
     msg = update.message
     if not msg or not msg.text:
         return
@@ -92,8 +93,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("لقد اخترت الأزرار بالفعل ولا يمكنك التكرار.")
         return
 
+    # الحالة الأولى: بانتظار أن يرسل الزبون نص "خطوات التسجيل والإشتراك"
+    if current_state == "waiting_for_subscription_text":
+        # التحقق مما إذا كانت الرسالة تبدأ أو تحتوي على العبارة المطلوبة
+        if "خطوات التسجيل والإشتراك" in text or "خطوات التسجيل والاشتراك" in text:
+            user_states[user_id] = "waiting_for_code"
+            await msg.reply_text("تم التحقق من بيانات الاشتراك بنجاح.\n\nالرجاء إرسال معرف العملية الخاص بك (مثال: 1235):")
+        else:
+            # إذا لم يكتب العبارة الصحيحة، يتم رفضه بالرسالة المطلوبة
+            await msg.reply_text("ليس لديك اشتراك او اكتب بيانات الاشتراك")
+        return
+
+    # الحالة الثانية: بانتظار إدخال معرف العملية الصحيح
     if current_state == "waiting_for_code":
-        # التحقق مما إذا كان المعرف المدخل مطابقاً للمعرف الفعّال حالياً
         if text == current_valid_code:
             user_states[user_id] = "choosing"
             
@@ -111,10 +123,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
         else:
-            # إذا كتب معرف خطأ
+            # إذا كتب معرف عملية خطأ
             await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال معرف العملية الصحيح")
 
-# معالجة ضغط الأزرار، منع التكرار، وتوليد معرف جديد للأدمن
+# معالجة ضغط الأزرار ومنع التكرار وتوليد معرف جديد للأدمن
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global current_valid_code
     query = update.callback_query
@@ -147,7 +159,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "sub_confirm":
         user_states[user_id] = "completed"
         
-        # 1. توليد معرف عملية جديد وتحديثه للبوت
+        # 1. توليد معرف عملية جديد وتحديثه للبوت فوراً
         new_code = generate_new_code()
         current_valid_code = new_code
 
@@ -181,7 +193,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بالقالب الثابت ومعرفات العمليات المتجددة...")
+    print("البوت يعمل الآن بالشرط الصارم لعبارة التسجيل ومعرفات العمليات المتجددة...")
     app.run_polling()
 
 if __name__ == "__main__":
