@@ -59,7 +59,7 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (أو تم إنشاؤه في السنوات الأخيرة)"
 
-# الخطوة 1: استقبال /start وعرض الترحيب مع النص الجديد الذي طلبته
+# الخطوة 1: استقبال /start وعرض الترحيب
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -73,7 +73,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📊 معلومات حسابك:\n"
         f"• معرفك الشخصي (ID): `{user_id}`\n"
         f"• تقدير الحساب: {age_estimation}\n\n"
-        f"✨ الرجاء إرسال بياناتك صحيحة ليتم تعرف عليك انظام"
+        f"الرجاء إرسال بياناتك صحيحة ليتم تعرف عليك انظام"
     )
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
@@ -98,7 +98,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if current_state == "waiting_for_subscription_text":
         if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
             user_states[user_id] = "waiting_for_code"
-            await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال معرف العملية الخاص بك للمتابعة (مثال: 1235):")
+            # تم حذف المثال (1235) بالكامل لتصبح السرية تامة ولا يظهر أي كود
+            await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال معرف العملية الخاص بك للمتابعة:")
         else:
             # رسالة الخطأ المختصرة
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة")
@@ -193,7 +194,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بالنص الجديد والمعرفات المتجددة...")
+    print("البوت يعمل الآن بسرية تامة بدون أي أمثلة معلنة لمعرفات العمليات...")
     app.run_polling()
 
 if __name__ == "__main__":
