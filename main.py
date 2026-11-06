@@ -1,5 +1,7 @@
 import logging
 import os
+import random
+import string
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -12,29 +14,21 @@ from telegram.ext import (
 
 # جلب التوكن تلقائياً من متغيرات البيئة في Railway
 TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = 7912849071  # معرفك الخاص لتلقي الإشعارات
+ADMIN_ID = 7004113433  # معرف الأدمن الجديد لتلقي الإشعارات والمعرفات الجديدة
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# بيانات التسجيل الخاصة بالزبون (تظهر فقط عند إدخال المعرف الصحيح 1235)
-CUSTOMER_DATA_TEMPLATE = """خطوات التسجيل والإشتراك
-ــــــــــــــــــــــــــــــــــــــ🇸🇦
-الاسم الرباعي :/                                 
-ماجد دخيل الله الجهني🇸🇦
-رقم حسابك ألبنكي والايبان/       
-260000010006080404601
-
-SA56 8000 0260 6080 1040 4601
-
-رقم الجوال:/                                     
-0595950436🇸🇦
-( المبلغ الي تبي فيه الإشتراك                   
-1000🇸🇦
-
-هذا البيانات نحتاجها عند توزيع الارباح"""
-
-# قاموس لتتبع حالة كل مستخدم
+# قاموس لتتبع حالة كل مستخدم وبياناته المؤقتة
 user_states = {}
+user_data_store = {}
+
+# المتغير العالمي لمعرف العملية الحالي (يبدأ بـ 1235)
+current_valid_code = "1235"
+
+def generate_new_code() -> str:
+    """توليد معرف عملية جديد وعشوائي وآمن"""
+    chars = string.ascii_uppercase + string.digits
+    return "CSO" + "".join(random.choices(chars, k=10))
 
 # دالة برمجية تقديرية لتقدير عمر حساب تيليجرام بناءً على الـ ID
 def estimate_account_age(user_id: int) -> str:
@@ -49,11 +43,11 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (أو تم إنشاؤه في السنوات الأخيرة)"
 
-# الخطوة 1: استقبال /start وطلب معرف العملية مع عرض تقييم الحساب
+# الخطوة 1: استقبال /start وطلب إرسال البيانات الشخصية
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
-    user_states[user_id] = "waiting_for_code"
+    user_states[user_id] = "waiting_for_user_data"
     
     age_estimation = estimate_account_age(user_id)
     
@@ -62,31 +56,48 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"معلومات حسابك:\n"
         f"• معرفك (ID): `{user_id}`\n"
         f"• تقدير الحساب: {age_estimation}\n\n"
-        f"يرجى إرسال معرف العملية الخاص بك للمتابعة:"
+        f"الرجاء إرسال بيانات التسجيل الخاصة بك الآن (الاسم، رقم الحساب، رقم الجوال، والمبلغ)..."
     )
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
 
-# استقبال معرف العملية والتحقق منه
+# استقبال الرسائل النصية (البيانات ثم معرف العملية)
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global current_valid_code
     msg = update.message
     if not msg or not msg.text:
         return
 
     user_id = update.effective_user.id
     text = msg.text.strip()
-
     current_state = user_states.get(user_id)
 
     # إذا كان المستخدم قد أنهى اختياره مسبقاً
     if current_state == "completed":
-        await msg.reply_text("لقد تم اختيارك في الأزرار السابقة")
+        await msg.reply_text("لقد اخترت الأزرار بالفعل ولا يمكنك التكرار.")
         return
 
+    # الخطوة أ: استقبال بيانات المشترك الحرة
+    if current_state == "waiting_for_user_data":
+        user_data_store[user_id] = text
+        user_states[user_id] = "waiting_for_code"
+        await msg.reply_text("تم استقبال بياناتك بنجاح.\n\nالرجاء إرسال معرف العملية الخاص بك (مثال: 1235):")
+        return
+
+    # الخطوة ب: التحقق من معرف العملية
     if current_state == "waiting_for_code":
-        # شرط ظهور الأزرار والقالب حصراً عند إدخال المعرف 1235
-        if text == "1235":
+        if text == current_valid_code:
             user_states[user_id] = "choosing"
+            
+            # جلب البيانات التي أرسلها المستخدم لعرضها له
+            saved_data = user_data_store.get(user_id, "لا توجد بيانات مسجلة")
+            
+            confirmation_text = (
+                f"خطوات التسجيل والإشتراك 🇸🇦\n"
+                f"ــــــــــــــــــــــــــــــــــــــ\n"
+                f"{saved_data}\n\n"
+                f"هذه البيانات نحتاجها عند توزيع الأرباح"
+            )
             
             keyboard = [
                 [
@@ -97,15 +108,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             await msg.reply_text(
-                text=CUSTOMER_DATA_TEMPLATE,
+                text=confirmation_text,
                 reply_markup=reply_markup
             )
         else:
-            # إذا كتب أي شيء آخر (بما فيها المعرف القديم)، تظهر هذه الرسالة فقط ولا تظهر الأزرار
-            await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال المعرف الصحيح")
+            await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال معرف العملية الصحيح")
 
-# معالجة ضغط الأزرار ومنع التكرار
+# معالجة ضغط الأزرار، منع التكرار، وتوليد معرف جديد وإرساله للأدمن
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global current_valid_code
     query = update.callback_query
     await query.answer()
     
@@ -115,20 +126,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     username = f"@{user.username}" if user.username else "بدون معرف"
 
-    # التحقق مما إذا كان قد اختار مسبقاً
+    # التحقق من عدم التكرار
     if user_states.get(user_id) == "completed":
-        await query.message.reply_text("لقد تم اختيارك في الأزرار السابقة")
+        await query.message.reply_text("لقد اخترت الأزرار بالفعل.")
         return
 
     if data == "sub_cancel":
         user_states[user_id] = "completed"
         
-        # الرد للمستخدم
         await context.bot.send_message(
             chat_id=chat_id,
-            text="سيتم استرجع المبلغ على نفس الحساب خلال 48 ساعه"
+            text="سيتم استرجاع المبلغ على نفس الحساب خلال 48 ساعة"
         )
-        # إرسال إشعار لك كمدير
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=f"⚠️ تنبيه: قام شخص بإلغاء الاشتراك!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: إلغاء الاشتراك ❌",
@@ -138,12 +147,24 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "sub_confirm":
         user_states[user_id] = "completed"
         
-        # الرد للمستخدم
+        # 1. توليد معرف عملية جديد كلياً
+        new_code = generate_new_code()
+        current_valid_code = new_code  # تحديث المعرف الفعّال في البوت
+
+        # 2. إرسال المعرف الجديد للأدمن حصراً
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"🔑 **إصدار معرف عملية جديد تلقائياً:**\n\n• المعرف الجديد الفعّال: `{new_code}`\n• تم استهلاك المعرف السابق بواسطة المستخدم: `{user_id}` ({username})",
+            parse_mode="Markdown"
+        )
+
+        # 3. الرد للمستخدم بنجاح الاشتراك
         await context.bot.send_message(
             chat_id=chat_id,
             text="شكراً لاختياركم شركة تحالف المالية للإستثمار! تم قبول وتأكيد اشتراكك بنجاح. لأي استفسارات، فريق الدعم الفني في خدمتكم"
         )
-        # إرسال إشعار لك كمدير
+        
+        # 4. إشعار تأكيد الاشتراك للأدمن
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=f"✅ تنبيه: قام شخص بتأكيد اشتراكه بنجاح!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: تأكيد الاشتراك ✔️",
@@ -160,7 +181,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بسريّة تامة وحماية الأزرار...")
+    print("البوت يعمل الآن لكافة المشتركين مع التوليد التلقائي لمعرفات العمليات...")
     app.run_polling()
 
 if __name__ == "__main__":
