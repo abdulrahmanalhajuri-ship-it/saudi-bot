@@ -10,9 +10,9 @@ from telegram.ext import (
     filters,
 )
 
-# جلب التوكن تلقائياً من متغيرات البيئة في Railway (أو ضع التوكن هنا مباشرة للتجربة على Pydroid 3)
+# جلب التوكن تلقائياً من متغيرات البيئة في Railway
 TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = 7912849071
+ADMIN_ID = 7912849071  # معرفك الخاص لتلقي الإشعارات
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
@@ -93,28 +93,44 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
         else:
-            # رسالة الخطأ السرية والمختصرة المطلوبة
+            # رسالة الخطأ السرية والمختصرة
             await msg.reply_text("❌ معرف العملية غير صحيح. يرجى إرسال المعرف الصحيح")
 
-# معالجة ضغط الأزرار وإرسال الردود النصية المباشرة
+# معالجة ضغط الأزرار وإرسال الردود وإشعار الأدمن (المشرف)
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
     data = query.data  
     chat_id = query.message.chat_id
+    user = query.from_user
+    user_id = user.id
+    username = f"@{user.username}" if user.username else "بدون معرف"
 
     if data == "sub_cancel":
+        # الرد للمستخدم
         await context.bot.send_message(
             chat_id=chat_id,
             text="سيتم استرجع المبلغ على نفس الحساب خلال 48 ساعه"
         )
+        # إرسال إشعار لك كمدير
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"⚠️ تنبيه: قام مستخدم إلغاء الاشتراك!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: إلغاء الاشتراك ❌",
+            parse_mode="Markdown"
+        )
 
     elif data == "sub_confirm":
-        # رسالة تأكيد الاشتراك الجديدة بالصيغة المطلوبة
+        # الرد للمستخدم
         await context.bot.send_message(
             chat_id=chat_id,
             text="شكراً لاختياركم شركة تحالف المالية للإستثمار! تم قبول وتأكيد اشتراكك بنجاح. لأي استفسارات، فريق الدعم الفني في خدمتكم"
+        )
+        # إرسال إشعار لك كمدير
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"✅ تنبيه: قام مستخدم بتأكيد اشتراكه بنجاح!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: تأكيد الاشتراك ✔️",
+            parse_mode="Markdown"
         )
 
 def main():
@@ -127,7 +143,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بسريّة تامة وبكفاءة عالية...")
+    print("البوت يعمل الآن بسريّة تامة وإشعارات الأدمن...")
     app.run_polling()
 
 if __name__ == "__main__":
