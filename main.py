@@ -25,8 +25,8 @@ user_states = {}
 # قاموس لحفظ بيانات كل مستخدم شخصياً
 user_custom_data = {}
 
-# قائمة الأكواد ومرجعيات العمليات الصالحة (تبدأ بـ 354)
-valid_codes = {"354101", "354202", "354189"}
+# قائمة الأكواد ومرجعيات العمليات الصالحة
+valid_codes = {"354101", "189415", "1235"}
 USED_CODES = set()
 
 def generate_new_code() -> str:
@@ -57,7 +57,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر إضافة رقم مرجع جديد
+# أمر إضافة رقم مرجع أو تحقق جديد من قبل الأدمن
 async def admin_add_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -66,12 +66,12 @@ async def admin_add_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         new_ref_code = context.args[0].strip()
         valid_codes.add(new_ref_code)
         await update.message.reply_text(
-            f"✅ **تمت إضافة رقم مرجع العملية بنجاح!**\n\n• المرجع المضاف: `{new_ref_code}`\n• أصبح جاهزاً ليستخدمه الزبون.",
+            f"✅ **تمت إضافة رقم التحقق بنجاح!**\n\n• الرقم المضاف: `{new_ref_code}`\n• أصبح جاهزاً لتسليمه للزبون.",
             parse_mode="Markdown"
         )
     else:
         await update.message.reply_text(
-            "⚠️ الرجاء كتابة رقم مرجع العملية بعد الأمر بمسافة.\nمثال:\n`/addcode 354999`",
+            "⚠️ الرجاء كتابة رقم التحقق بعد الأمر بمسافة.\nمثال:\n`/addcode 354999`",
             parse_mode="Markdown"
         )
 
@@ -103,7 +103,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(welcome_msg, parse_mode="Markdown", reply_markup=reply_markup)
 
-# معالجة الرسائل النصية والتحقق من البيانات والأكواد (رقم التحقق)
+# معالجة الرسائل النصية والتحقق من البيانات ورقم التحقق
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -124,31 +124,31 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_custom_data[user_id] = text
             user_states[user_id] = "waiting_for_code"
             
-            await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال **رقم التحقق (رقم مرجع العملية)** الخاص بك (الذي يبدأ بـ 354) لكي تتمكن من رؤية أرباحك ورصيدك:")
+            await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال **رقم تحقق الاشتراك** الخاص بك لتتمكن من رؤية رصيدك وأرباحك:")
         else:
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة (مثل بيانات الحساب أو خطوات التسجيل والإشتراك)")
         return
 
-    # الحالة الثانية: التحقق من رقم التحقق/المرجع (الذي يبدأ بـ 354 أو موجود في الأكواد الصالحة)
-    if current_state == "waiting_for_code" or text.startswith("354") or text in valid_codes:
+    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون
+    if current_state == "waiting_for_code" or text in valid_codes:
         if text in valid_codes:
             # 1. حرق الكود واستبعاده فوراً لكي لا يُستخدم مرة أخرى
             valid_codes.remove(text)
             USED_CODES.add(text)
             user_states[user_id] = "choosing"
             
-            # 2. توليد رقم تحقق (كود) جديد تلقائياً وإضافته لقائمة الأكواد الصالحة
+            # 2. توليد رقم تحقق جديد تلقائياً وإضافته لقائمة الأكواد الصالحة
             auto_new_code = generate_new_code()
             valid_codes.add(auto_new_code)
 
-            # 3. إرسال الكود المتجدد الجديد حصرياً إلى الأدمن على الخاص
+            # 3. إرسال الكود الجديد حصرياً إلى الأدمن على الخاص
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
                 text=(
                     "🔑 **تم استهلاك رقم تحقق وإصدار رقم جديد!**\n\n"
                     f"• الرقم المستهلك (المحروق): `{text}`\n"
                     f"• بواسطة المستخدم: `{user_id}` ({username})\n\n"
-                    f"🆕 **رقم التحقق الجديد المتجدد للزبون القادم:**\n`{auto_new_code}`"
+                    f"🆕 **رقم التحقق الجديد المتجدد لتسليمه للزبون القادم:**\n`{auto_new_code}`"
                 ),
                 parse_mode="Markdown"
             )
@@ -174,7 +174,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
         else:
-            await msg.reply_text("❌ رقم التحقق غير صحيح أو تم استخدامه مسبقاً. يرجى التأكد من الرقم الصحيح.")
+            await msg.reply_text("❌ رقم التحقق غير صحيح أو تم استخدامه مسبقاً. يرجى مراجعة الدعم الفني للحصول على رقم صحيح.")
         return
 
 # معالجة استلام لقطات الشاشة (Screenshots) للإيداع
@@ -245,9 +245,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error(f"فشل إرسال إشعار الإيداع للأدمن: {e}")
 
     elif data == "btn_withdraw":
+        # رسالة سحب نظيفة بدون إظهار أي رموز أو بادئات للمستخدم
         withdraw_text = (
             "📤 **طلب سحب الأرباح:**\n\n"
-            "• الرجاء إرسال **رقم التحقق (رقم مرجع الاشتراك)** الخاص بك (الذي يبدأ بـ `354`) في المحادثة هنا لتتمكن من رؤية رصيدك وأرباحك وسحبها.\n\n"
+            "• الرجاء إرسال **رقم تحقق الاشتراك الخاص بك** في المحادثة هنا لتتمكن من رؤية رصيدك وأرباحك وتستطيع سحبها.\n\n"
             f"لأي استفسار إضافي، تواصل مع الدعم الفني: {SUPPORT_HANDLE}"
         )
         keyboard = [[InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_data="back_to_main")]]
@@ -305,7 +306,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكامل الميزات وتوليد الأكواد للأدمن...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكامل الميزات وبسرية تامة لأرقام التحقق...")
     app.run_polling()
 
 if __name__ == "__main__":
