@@ -125,7 +125,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر /start الترحيبي
+# أمر /start الترحيبي (بدون إظهار أي كلمات سرية للزبون)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -140,7 +140,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📊 معلومات حسابك:\n"
         f"• معرفك الشخصي (ID): `{user_id}`\n"
         f"• تقدير الحساب: {age_estimation}\n\n"
-        f"الرجاء إرسال بياناتك صحيحة (خطوات التسجيل والإشتراك) ليتم التعرف عليك في النظام."
+        f"الرجاء إرسال تفاصيل بياناتك صحيحة ليتم التعرف عليك في النظام وتفعيل حسابك."
     )
     
     await update.message.reply_text(
@@ -209,7 +209,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار. يمكنك التواصل مع الدعم الفني.")
         return
 
-    # الحالة الأولى: اشتراط أن تبدأ الرسالة بـ "خطوات التسجيل والإشتراك" حصرياً
+    # التحقق الداخلي الصارم (بدون كشف الكلمة السرية للزبون)
     if current_state == "waiting_for_subscription_text":
         if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
             user_custom_data[user_id] = text
@@ -217,7 +217,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال **رقم تحقق الاشتراك** الخاص بك لتتمكن من رؤية رصيدك المتاح:")
         else:
-            await msg.reply_text("❌ عذراً، يجب أن تبدأ رسالتك بعبارة **خطوات التسجيل والإشتراك** ليتم قبول بياناتك في النظام بشكل صحيح.")
+            await msg.reply_text("❌ عذراً، الصيغة المرسلة غير صحيحة. الرجاء إرسال تفاصيل بياناتك كاملة وصحيحة ليتم قبولها في النظام.")
         return
 
     if current_state == "waiting_for_bank_account":
@@ -418,8 +418,9 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بالشرط الصارم لخطوات التسجيل...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بالتحقق الصارم والمخفي تماماً...")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
+
