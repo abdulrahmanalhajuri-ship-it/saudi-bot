@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن الجديد المعتمد للبوت
+# التوكن المعتمد للبوت
 TOKEN = "9056801472:AAHsVQ8Iwl_pa34_4gAYxakvY5y-r-vEjzU"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
@@ -25,8 +25,12 @@ user_states = {}
 # قاموس لحفظ بيانات كل مستخدم شخصياً
 user_custom_data = {}
 
-# قائمة الأكواد ومرجعيات العمليات الصالحة
-valid_codes = {"354101", "189415", "1235"}
+# قاعدة بيانات الأكواد والمبالغ المخصصة للمستخدمين
+# شكل التخزين: { "رقم_التحقق": {"amount": المبلغ, "assigned_user_id": معرف_المستخدم} }
+custom_profits = {
+    "354101": {"amount": "2500", "assigned_user_id": None},
+    "189415": {"amount": "1500", "assigned_user_id": None}
+}
 USED_CODES = set()
 
 def generate_new_code() -> str:
@@ -47,33 +51,51 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
+# أمر الأدمن لتحديد المبلغ ورقم التحقق لزبون معين بدقة:
+# /setprofit <user_id> <amount> <code_number>
+async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    args = context.args
+    if len(args) < 3:
+        await update.message.reply_text(
+            "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
+            "اكتب الأمر بهذا الشكل:\n"
+            "`/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`\n\n"
+            "مثال:\n`/setprofit 123456789 2500 354777`",
+            parse_mode="Markdown"
+        )
+        return
+
+    target_user_id = args[0].strip()
+    amount = args[1].strip()
+    code = args[2].strip()
+
+    # حفظ الكود وربطه حصرياً بالمستخدم والمبلغ
+    custom_profits[code] = {
+        "amount": amount,
+        "assigned_user_id": int(target_user_id)
+    }
+
+    await update.message.reply_text(
+        f"✅ **تم تخصيص الأرباح ورقم التحقق بنجاح!**\n\n"
+        f"• معرف المستخدم: `{target_user_id}`\n"
+        f"• الرصيد/الأرباح: `{amount} ريال`\n"
+        f"• رقم التحقق الخاص به: `{code}`\n\n"
+        "🔒 هذا الرقم مرتبط به وحده ولا يمكن لأي شخص آخر استخدامه.",
+        parse_mode="Markdown"
+    )
+
 # أمر عرض الأكواد والمراجع الفعّالة للأدمن
 async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
-    codes_list = ", ".join(valid_codes)
+    codes_str = ", ".join([f"{code} (مبلغ: {data['amount']})" for code, data in custom_profits.items()])
     await update.message.reply_text(
-        f"🔑 **أرقام المراجع وأكواد العملية الفعّالة حالياً:**\n`{codes_list}`",
+        f"🔑 **أكواد التحقق الفعّالة ومبالغها الحالية:**\n`{codes_str}`",
         parse_mode="Markdown"
     )
-
-# أمر إضافة رقم مرجع أو تحقق جديد من قبل الأدمن
-async def admin_add_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID:
-        return
-
-    if context.args:
-        new_ref_code = context.args[0].strip()
-        valid_codes.add(new_ref_code)
-        await update.message.reply_text(
-            f"✅ **تمت إضافة رقم التحقق بنجاح!**\n\n• الرقم المضاف: `{new_ref_code}`\n• أصبح جاهزاً لتسليمه للزبون.",
-            parse_mode="Markdown"
-        )
-    else:
-        await update.message.reply_text(
-            "⚠️ الرجاء كتابة رقم التحقق بعد الأمر بمسافة.\nمثال:\n`/addcode 354999`",
-            parse_mode="Markdown"
-        )
 
 # أمر /start الترحيبي مع معلومات الحساب وزر السحب فقط
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -100,7 +122,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(welcome_msg, parse_mode="Markdown", reply_markup=reply_markup)
 
-# معالجة الرسائل النصية والتحقق من البيانات ورقم التحقق
+# معالجة الرسائل النصية والتحقق من البيانات ورقم التحقق المخصص
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -126,17 +148,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة (مثل بيانات الحساب أو خطوات التسجيل والإشتراك)")
         return
 
-    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون
-    if current_state == "waiting_for_code" or text in valid_codes:
-        if text in valid_codes:
+    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون وربطه بحسابه حصرياً
+    if current_state == "waiting_for_code" or text in custom_profits:
+        if text in custom_profits:
+            code_info = custom_profits[text]
+            assigned_id = code_info["assigned_user_id"]
+            
+            # التحقق هل الكود مخصص لشخص معين ولا يجوز لغيره استخدامه
+            if assigned_id is not None and assigned_id != user_id:
+                await msg.reply_text("❌ عذراً، رقم التحقق هذا غير مخصص لحسابك ولا يمكنك استخدامه.")
+                return
+
+            profit_amount = code_info["amount"]
+
             # 1. حرق الكود واستبعاده فوراً لكي لا يُستخدم مرة أخرى
-            valid_codes.remove(text)
+            del custom_profits[text]
             USED_CODES.add(text)
             user_states[user_id] = "choosing"
             
-            # 2. توليد رقم تحقق جديد تلقائياً وإضافته لقائمة الأكواد الصالحة
+            # 2. توليد رقم تحقق جديد تلقائياً وإضافته للأدمن
             auto_new_code = generate_new_code()
-            valid_codes.add(auto_new_code)
+            custom_profits[auto_new_code] = {"amount": "2000", "assigned_user_id": None}
 
             # 3. إرسال الكود الجديد حصرياً إلى الأدمن على الخاص
             await context.bot.send_message(
@@ -160,11 +192,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             user_specific_data = user_custom_data.get(user_id, "بيانات التسجيل مسجلة بنجاح")
 
-            # 4. عرض الأرباح والرصيد للزبون بعد نجاح التحقق
+            # 4. عرض الأرباح والمبلغ المخصص للزبون بعد نجاح التحقق
             await msg.reply_text(
                 text=(
-                    "✅ **تم التحقق من رقم التحقق بنجاح!**\n"
-                    "📈 تم استعراض تفاصيل أرباحك ورصيدك المتاح بنجاح.\n\n"
+                    "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
+                    f"💰 **رصيدك وأرباحك المتاحة:** `{profit_amount} ريال`\n\n"
                     f"إليك بياناتك المسجلة:\n\n{user_specific_data}"
                 ),
                 reply_markup=reply_markup,
@@ -238,11 +270,11 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("codes", admin_get_codes))
-    app.add_handler(CommandHandler("addcode", admin_add_code))
+    app.add_handler(CommandHandler("setprofit", set_profit))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالتوكن الجديد وجاهز تماماً...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بنظام الأرباح المخصصة والأكواد الآمنة...")
     app.run_polling()
 
 if __name__ == "__main__":
