@@ -137,14 +137,30 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
+    # أزرار الأدمن تحت صورة الوصل (تم الدفع / رفض العملية)
+    keyboard = [
+        [
+            InlineKeyboardButton("✅ تم الدفع بنجاح", callback_data=f"admin_approve_{user_id}"),
+            InlineKeyboardButton("❌ تم رفض العملية", callback_data=f"admin_reject_{user_id}")
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     admin_caption = (
         "📥 **إيصال دفع رسوم سحب جديد تم رفعه من مستخدم!**\n\n"
         f"👤 اسم المستثمر: {user.first_name}\n"
         f"🆔 معرف المستخدم: `{user_id}`\n"
-        f"🔗 يوزر الحساب: {username}"
+        f"🔗 يوزر الحساب: {username}\n\n"
+        "يرجى مراجعة الإيصال والضغط على أحد الأزرار أدناه:"
     )
     try:
-        await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo.file_id, caption=admin_caption, parse_mode="Markdown")
+        await context.bot.send_photo(
+            chat_id=ADMIN_ID, 
+            photo=photo.file_id, 
+            caption=admin_caption, 
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
+        )
     except Exception as e:
         logger.error(f"فشل إرسال صورة إيصال الرسوم للأدمن: {e}")
 
@@ -270,6 +286,49 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     username = f"@{user.username}" if user.username else "بدون معرف"
 
+    # معالجة أزرار الأدمن الخاصة بقبول أو رفض الإيصال
+    if data.startswith("admin_approve_") or data.startswith("admin_reject_"):
+        if user_id != ADMIN_ID:
+            await query.answer("هذا الإجراء مخصص للأدمن فقط!", show_alert=True)
+            return
+
+        parts = data.split("_")
+        action = parts[1]  # approve أو reject
+        target_user_id = int(parts[2])
+
+        if action == "approve":
+            # إرسال رسالة نجاح السحب للزبون
+            try:
+                await context.bot.send_message(
+                    chat_id=target_user_id,
+                    text="✅ **تهانينا! تم تأكيد الدفع وعملية سحب أرباحك بنجاح.** جاري تحويل المبلغ إلى حسابك البنكي.",
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logger.error(f"فشل إرسال رسالة القبول للزبون: {e}")
+
+            await query.edit_message_caption(
+                caption=query.message.caption + "\n\n✅ **[تمت الموافقة على الدفع وتأكيد السحب]**",
+                parse_mode="Markdown"
+            )
+
+        elif action == "reject":
+            # إرسال رسالة الرفض للزبون
+            try:
+                await context.bot.send_message(
+                    chat_id=target_user_id,
+                    text="❌ **عذراً، تم رفض العملية لعدم قيامك بتحويل المبلغ المطلوب أو عدم صحة الوصل.** يرجى التأكد وإعادة المحاولة.",
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logger.error(f"فشل إرسال رسالة الرفض للزبون: {e}")
+
+            await query.edit_message_caption(
+                caption=query.message.caption + "\n\n❌ **[تم رفض العملية ولم يتم دفع المبلغ]**",
+                parse_mode="Markdown"
+            )
+        return
+
     if data == "enter_bank_account":
         user_states[user_id] = "waiting_for_bank_account"
         await query.edit_message_text(
@@ -320,7 +379,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "pay_fees":
-        # تفاصيل دفع الرسوم المطلوبة بالكامل بالشكل الجديد المطلوب
+        # تفاصيل دفع الرسوم المطلوبة بالكامل
         pay_details = (
             "💳 **دفع رسوم السحب:**\n\n"
             "العملة: **USDT**\n"
@@ -348,7 +407,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكامل تفاصيل دفع الرسوم وتحديثاتها...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكامل أزرار تحكم الأدمن للرسوم...")
     app.run_polling()
 
 if __name__ == "__main__":
