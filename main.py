@@ -26,9 +26,9 @@ user_states = {}
 user_custom_data = {}
 
 # قاعدة بيانات الأكواد والمبالغ المخصصة للمستخدمين
-# شكل التخزين: { "رقم_التحقق": {"amount": المبلغ, "assigned_user_id": معرف_المستخدم} }
 custom_profits = {
-    "354101": {"amount": "2500", "assigned_user_id": None},
+    "354101": {"amount": "45,500", "assigned_user_id": None},
+    "00554": {"amount": "45,500", "assigned_user_id": None},
     "189415": {"amount": "1500", "assigned_user_id": None}
 }
 USED_CODES = set()
@@ -63,7 +63,7 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
             "اكتب الأمر بهذا الشكل:\n"
             "`/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`\n\n"
-            "مثال:\n`/setprofit 123456789 2500 354777`",
+            "مثال:\n`/setprofit 7004113433 45500 00554`",
             parse_mode="Markdown"
         )
         return
@@ -72,7 +72,6 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     amount = args[1].strip()
     code = args[2].strip()
 
-    # حفظ الكود وربطه حصرياً بالمستخدم والمبلغ
     custom_profits[code] = {
         "amount": amount,
         "assigned_user_id": int(target_user_id)
@@ -97,7 +96,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر /start الترحيبي مع معلومات الحساب وزر السحب فقط
+# أمر /start الترحيبي مع معلومات حساب المستخدم وزر السحب
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -122,7 +121,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(welcome_msg, parse_mode="Markdown", reply_markup=reply_markup)
 
-# معالجة الرسائل النصية والتحقق من البيانات ورقم التحقق المخصص
+# معالجة الرسائل النصية والتحقق من البيانات ورقم التحقق
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -148,29 +147,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة (مثل بيانات الحساب أو خطوات التسجيل والإشتراك)")
         return
 
-    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون وربطه بحسابه حصرياً
+    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون
     if current_state == "waiting_for_code" or text in custom_profits:
         if text in custom_profits:
             code_info = custom_profits[text]
             assigned_id = code_info["assigned_user_id"]
             
-            # التحقق هل الكود مخصص لشخص معين ولا يجوز لغيره استخدامه
             if assigned_id is not None and assigned_id != user_id:
                 await msg.reply_text("❌ عذراً، رقم التحقق هذا غير مخصص لحسابك ولا يمكنك استخدامه.")
                 return
 
             profit_amount = code_info["amount"]
 
-            # 1. حرق الكود واستبعاده فوراً لكي لا يُستخدم مرة أخرى
+            # حرق الكود واستبعاده فوراً
             del custom_profits[text]
             USED_CODES.add(text)
             user_states[user_id] = "choosing"
             
-            # 2. توليد رقم تحقق جديد تلقائياً وإضافته للأدمن
+            # توليد رقم تحقق جديد للأدمن
             auto_new_code = generate_new_code()
             custom_profits[auto_new_code] = {"amount": "2000", "assigned_user_id": None}
 
-            # 3. إرسال الكود الجديد حصرياً إلى الأدمن على الخاص
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
                 text=(
@@ -182,17 +179,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
 
+            # الأزرار الجديدة المطلوبة بدقة
             keyboard = [
                 [
-                    InlineKeyboardButton("تأكيد الاشتراك", callback_data="sub_confirm"),
-                    InlineKeyboardButton("إلغاء الاشتراك", callback_data="sub_cancel")
+                    InlineKeyboardButton("تأكيد السحب", callback_data="withdraw_confirm"),
+                    InlineKeyboardButton("إلغاء سحب", callback_data="withdraw_cancel")
                 ]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
             user_specific_data = user_custom_data.get(user_id, "بيانات التسجيل مسجلة بنجاح")
 
-            # 4. عرض الأرباح والمبلغ المخصص للزبون بعد نجاح التحقق
+            # عرض الأرباح للمستخدم مع الأزرار الجديدة
             await msg.reply_text(
                 text=(
                     "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
@@ -206,7 +204,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text("❌ رقم التحقق غير صحيح أو تم استخدامه مسبقاً. يرجى مراجعة الدعم الفني للحصول على رقم صحيح.")
         return
 
-# معالجة الأزرار التفاعلية (السحب فقط والرجوع)
+# معالجة الأزرار التفاعلية
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -238,27 +236,29 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         await query.edit_message_text(main_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
-    elif data == "sub_cancel":
+    elif data == "withdraw_cancel":
         user_states[user_id] = "completed"
+        # الرسالة المطلوبة عند الضغط على إلغاء سحب
         await context.bot.send_message(
             chat_id=chat_id,
-            text="سيتم استرجاع المبلغ على نفس الحساب خلال 48 ساعة"
+            text="تم الإلغاء بنجاح"
         )
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"⚠️ تنبيه: قام شخص بإلغاء الاشتراك!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: إلغاء الاشتراك ❌",
+            text=f"⚠️ تنبيه: قام المستخدم بإلغاء السحب!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}",
             parse_mode="Markdown"
         )
 
-    elif data == "sub_confirm":
+    elif data == "withdraw_confirm":
         user_states[user_id] = "completed"
+        # الرسالة المطلوبة عند الضغط على تأكيد السحب
         await context.bot.send_message(
             chat_id=chat_id,
-            text="شكراً لاختياركم شركة تحالف المالية للإستثمار! تم قبول وتأكيد اشتراكك بنجاح. لأي استفسارات، فريق الدعم الفني في خدمتكم"
+            text="الرجاء دفع رسوم سحب"
         )
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"✅ تنبيه: قام شخص بتأكيد اشتراكه بنجاح!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}\n• الاختيار: تأكيد الاشتراك ✔️",
+            text=f"✅ تنبيه: قام المستخدم بتأكيد السحب (وطُلب منه دفع رسوم سحب)!\n\n• معرف المستخدم: `{user_id}`\n• اليوزر: {username}",
             parse_mode="Markdown"
         )
 
@@ -274,7 +274,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بنظام الأرباح المخصصة والأكواد الآمنة...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالأزرار الجديدة وتأكيد/إلغاء السحب...")
     app.run_polling()
 
 if __name__ == "__main__":
