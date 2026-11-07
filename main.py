@@ -209,14 +209,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار. يمكنك التواصل مع الدعم الفني.")
         return
 
+    # الحالة الأولى: اشتراط أن تبدأ الرسالة بـ "خطوات التسجيل والإشتراك" حصرياً
     if current_state == "waiting_for_subscription_text":
-        if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك") or text.startswith("حساب") or len(text) > 10:
+        if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
             user_custom_data[user_id] = text
             user_states[user_id] = "waiting_for_code"
             
             await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال **رقم تحقق الاشتراك** الخاص بك لتتمكن من رؤية رصيدك المتاح:")
         else:
-            await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة (مثل بيانات الحساب أو خطوات التسجيل والإشتراك)")
+            await msg.reply_text("❌ عذراً، يجب أن تبدأ رسالتك بعبارة **خطوات التسجيل والإشتراك** ليتم قبول بياناتك في النظام بشكل صحيح.")
         return
 
     if current_state == "waiting_for_bank_account":
@@ -417,7 +418,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بالريال السعودي (SAR)...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بالشرط الصارم لخطوات التسجيل...")
     app.run_polling()
 
 if __name__ == "__main__":
