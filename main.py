@@ -95,7 +95,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر /start الترحيبي مع معلومات الحساب وزري (سحب) و (الدعم الفني) فقط
+# أمر /start الترحيبي بدون أي أزرار تحت الرسالة تماماً
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -109,16 +109,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📊 معلومات حسابك:\n"
         f"• معرفك الشخصي (ID): `{user_id}`\n"
         f"• تقدير الحساب: {age_estimation}\n\n"
-        f"الرجاء إرسال بياناتك صحيحة (خطوات التسجيل والإشتراك) ليتم التعرف عليك في النظام، أو استخدم الأزرار أدناه:"
+        f"الرجاء إرسال بياناتك صحيحة (خطوات التسجيل والإشتراك) ليتم التعرف عليك في النظام."
     )
     
-    keyboard = [
-        [InlineKeyboardButton("📤 سحب", callback_data="btn_withdraw")],
-        [InlineKeyboardButton("💬 التواصل مع الدعم الفني", url=f"https://t.me/AbuAbdulAlziz")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await update.message.reply_text(welcome_msg, parse_mode="Markdown", reply_markup=reply_markup)
+    # تم إزالة الأزرار نهائياً بناءً على طلبك
+    await update.message.reply_text(welcome_msg, parse_mode="Markdown")
 
 # معالجة الرسائل النصية
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -132,7 +127,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current_state = user_states.get(user_id)
 
     if current_state == "completed":
-        await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار. يمكنك استخدام الأزرار أو التواصل مع الدعم الفني.")
+        await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار. يمكنك التواصل مع الدعم الفني.")
         return
 
     # الحالة الأولى: استقبال بيانات التسجيل
@@ -194,7 +189,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
 
-            # الزر في الأعلى وأزرار التأكيد والإلغاء في الأسفل
+            # الأزرار في رسالة عرض الرصيد والأرباح
             keyboard = [
                 [InlineKeyboardButton("💳 ادخل حسابك البنكي", callback_data="enter_bank_account")],
                 [
@@ -230,28 +225,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     username = f"@{user.username}" if user.username else "بدون معرف"
 
-    if data == "btn_withdraw":
-        withdraw_text = (
-            "📤 **طلب سحب الأرباح:**\n\n"
-            "• أرسل بياناتك ليتم إنظام (التاكد من اشتراكك) ليتم ظهور لك أزرار تحقق.\n\n"
-            f"لأي استفسار إضافي، تواصل مع الدعم الفني: {SUPPORT_HANDLE}"
-        )
-        keyboard = [[InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_data="back_to_main")]]
-        await query.edit_message_text(withdraw_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
-
-    elif data == "back_to_main":
-        user_states[user_id] = "waiting_for_subscription_text"
-        main_text = (
-            f"🌟 أهلاً بك من جديد في القائمة الرئيسية لشركة **تحالف المالية للإستثمار** 🇸🇦\n\n"
-            "اختر أحد الخيارات أدناه أو أرسل بياناتك ورقم التحقق الخاص بك:"
-        )
-        keyboard = [
-            [InlineKeyboardButton("📤 سحب", callback_data="btn_withdraw")],
-            [InlineKeyboardButton("💬 التواصل مع الدعم الفني", url=f"https://t.me/AbuAbdulAlziz")]
-        ]
-        await query.edit_message_text(main_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
-
-    elif data == "enter_bank_account":
+    if data == "enter_bank_account":
         user_states[user_id] = "waiting_for_bank_account"
         await query.edit_message_text(
             "💳 **إدخال الحساب البنكي:**\n\n"
@@ -295,7 +269,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالأزرار المطلوبة فقط...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بدون أزرار في رسالة الترحيب...")
     app.run_polling()
 
 if __name__ == "__main__":
