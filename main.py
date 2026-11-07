@@ -14,8 +14,7 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن المعتمد للبوت
-TOKEN = "9014957370:AAHEFAt-9tIbs2qJvUPA-H4QBB2mn4f6v4M"
+# التوكن المعتمد للبوت"9014957370:9014957370:AAHEFAt-9tIbs2qJvUPA-H4QBB2mn4f6v4M
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
 
