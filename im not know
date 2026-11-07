@@ -12,8 +12,8 @@ from telegram.ext import (
     filters,
 )
 
-# تعيين التوكن مباشرة للتشغيل المحلي
-TOKEN = "9056801472:AAHsVQ8Iwl_pa34_4gAYxakvY5y-r-vEjzU"
+# تعيين التوكن للتشغيل المحلي أو عبر متغيرات البيئة
+TOKEN = os.getenv("BOT_TOKEN", "9056801472:AAHsVQ8Iwl_pa34_4gAYxakvY5y-r-vEjzU")
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -54,12 +54,11 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر إضافة رقم مرجع جديد (مع معالجة الأخطاء والمسافات بدقة)
+# أمر إضافة رقم مرجع جديد
 async def admin_add_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
 
-    # التأكد من وجود نص بعد الأمر
     if context.args:
         new_ref_code = context.args[0].strip()
         valid_codes.add(new_ref_code)
@@ -87,7 +86,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📊 معلومات حسابك:\n"
         f"• معرفك الشخصي (ID): `{user_id}`\n"
         f"• تقدير الحساب: {age_estimation}\n\n"
-        f"الرجاء إرسال بياناتك صحيحة ليتم تعرف عليك انظام"
+        f"الرجاء إرسال بياناتك صحيحة ليتم التعرف عليك في النظام"
     )
     
     await update.message.reply_text(welcome_msg, parse_mode="Markdown")
@@ -121,12 +120,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # الحالة الثانية: التحقق من رقم المرجع
     if current_state == "waiting_for_code":
         if text in valid_codes:
-            # حرق الرقم واستبعاده فوراً لكي لا يُستخدم مرة أخرى
             valid_codes.remove(text)
-            
             user_states[user_id] = "choosing"
             
-            # توليد كود تلقائي جديد وإضافته للقائمة
             auto_new_code = generate_new_code()
             valid_codes.add(auto_new_code)
 
@@ -204,7 +200,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بدعم المراجع اليدوية والتلقائية بكفاءة عالية...")
+    print("Bot is running successfully...")
     app.run_polling()
 
 if __name__ == "__main__":
