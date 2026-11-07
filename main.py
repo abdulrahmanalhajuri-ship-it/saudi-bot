@@ -11,7 +11,7 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن الجديد المعتمد للبوت
+# التوكن المعتمد للبوت
 TOKEN = "9014957370:AAHEFAt-9tIbs2qJvUPA-H4QBB2mn4f6v4M"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
@@ -107,9 +107,9 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
 
     await update.message.reply_text(
-        f"✅ **تم تخصيص الأرباح ورقم التحقق بنجاح!**\n\n"
+        f"✅ **تم تخصيص الرصيد ورقم التحقق بنجاح!**\n\n"
         f"• معرف المستخدم: `{target_user_id}`\n"
-        f"• الرصيد/الأرباح: `{amount} دولار`\n"
+        f"• الرصيد المتاح: `{amount} دولار`\n"
         f"• رقم التحقق الخاص به: `{code}`\n\n"
         "🔒 هذا الرقم مرتبط به وحده (ولا يحترق، بل يظل فعالاً دائماً).",
         parse_mode="Markdown"
@@ -214,7 +214,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_custom_data[user_id] = text
             user_states[user_id] = "waiting_for_code"
             
-            await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال **رقم تحقق الاشتراك** الخاص بك لتتمكن من رؤية رصيدك وأرباحك:")
+            await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال **رقم تحقق الاشتراك** الخاص بك لتتمكن من رؤية رصيدك المتاح:")
         else:
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة (مثل بيانات الحساب أو خطوات التسجيل والإشتراك)")
         return
@@ -281,7 +281,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text(
                 text=(
                     "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
-                    f"💰 **رصيدك وأرباحك المتاحة:** `{profit_amount} دولار`\n\n"
+                    f"💰 **رصيدك المتاح:** `{profit_amount} دولار`\n\n"
                     f"إليك بياناتك المسجلة:\n\n{user_specific_data}"
                 ),
                 reply_markup=reply_markup,
@@ -316,7 +316,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await context.bot.send_message(
                     chat_id=target_user_id,
-                    text="✅ **تهانينا! تم تأكيد الدفع وعملية سحب أرباحك بنجاح في (عالم الكريبتو).** جاري تحويل المبلغ إلى حسابك.",
+                    text="✅ **تهانينا! تم تأكيد الدفع وعملية سحب رصيدك بنجاح في (عالم الكريبتو).** جاري تحويل المبلغ إلى حسابك.",
                     parse_mode="Markdown"
                 )
             except Exception as e:
@@ -417,7 +417,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بالتوكن الجديد وبأعلى كفاءة...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن وتظهر عبارة (رصيدك المتاح) فقط...")
     app.run_polling()
 
 if __name__ == "__main__":
