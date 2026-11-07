@@ -2,7 +2,7 @@ import logging
 import os
 import random
 import string
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
@@ -52,6 +52,7 @@ def estimate_account_age(user_id: int) -> str:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
 # أمر الأدمن لتحديد المبلغ ورقم التحقق لزبون معين بدقة:
+# /setprofit <user_id> <amount> <code_number>
 async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -95,7 +96,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر /start الترحيبي بدون أي أزرار تحت الرسالة تماماً
+# أمر /start الترحيبي مع مسح الكيبورد القديم نهائياً
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -112,10 +113,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"الرجاء إرسال بياناتك صحيحة (خطوات التسجيل والإشتراك) ليتم التعرف عليك في النظام."
     )
     
-    # تم إزالة الأزرار نهائياً بناءً على طلبك
-    await update.message.reply_text(welcome_msg, parse_mode="Markdown")
+    await update.message.reply_text(
+        welcome_msg, 
+        parse_mode="Markdown",
+        reply_markup=ReplyKeyboardRemove()
+    )
 
-# معالجة الرسائل النصية
+# معالجة الرسائل النصية وحالة التحقق من الكود
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
@@ -189,7 +193,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
 
-            # الأزرار في رسالة عرض الرصيد والأرباح
+            # أزرار عرض الرصيد والعمليات
             keyboard = [
                 [InlineKeyboardButton("💳 ادخل حسابك البنكي", callback_data="enter_bank_account")],
                 [
@@ -269,7 +273,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بدون أزرار في رسالة الترحيب...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بكفاءة وبأعلى معايير الأمان والتنظيم...")
     app.run_polling()
 
 if __name__ == "__main__":
