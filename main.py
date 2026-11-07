@@ -125,7 +125,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر /start الترحيبي (بدون إظهار أي كلمات سرية للزبون)
+# أمر /start الترحيبي
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -279,6 +279,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             user_specific_data = user_custom_data.get(user_id, "بيانات التسجيل مسجلة بنجاح")
 
+            # تنسيق العملة بحيث تظهر القيمة أولاً ثم SAR في النهاية بدون أي تداخل
             await msg.reply_text(
                 text=(
                     "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
@@ -418,7 +419,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بتنسيق العملة المنظم (SAR)...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بتنسيق SAR السليم...")
     app.run_polling()
 
 if __name__ == "__main__":
