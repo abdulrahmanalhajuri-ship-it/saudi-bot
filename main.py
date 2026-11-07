@@ -19,12 +19,12 @@ SUPPORT_HANDLE = "@AbuAbdulAlziz"
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# قاموس لتتبع حالة كل مستخدم
+# قاموس لتتبع حالة كل مستخدم وقائمة بجميع المستخدمين (للبث الجماعي)
 user_states = {}
-# قاموس لحفظ بيانات كل مستخدم شخصياً
 user_custom_data = {}
+all_users_set = set()  # لحفظ معرفات كل من تفاعل مع البوت
 
-# قاعدة بيانات الأكواد والمبالغ المخصصة للمستخدمين
+# قاعدة بيانات الأكواد والمبالغ المخصصة للمستخدمين (دائمة وغير قابلة للحرق)
 custom_profits = {
     "354101": {"amount": "45,500", "assigned_user_id": None},
     "00554": {"amount": "45,500", "assigned_user_id": None},
@@ -45,7 +45,43 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
-# أمر الأدمن لتحديد المبلغ ورقم التحقق لزبون معين بدقة:
+# أمر الأدمن للإذاعة وإرسال رسالة لجميع المستخدمين: /broadcast <الرسالة>
+async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    text_to_send = " ".join(context.args)
+    if not text_to_send:
+        await update.message.reply_text(
+            "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
+            "اكتب الأمر بهذا الشكل:\n"
+            "`/broadcast <الرسالة المراد إرسالها للجميع>`",
+            parse_mode="Markdown"
+        )
+        return
+
+    success_count = 0
+    fail_count = 0
+
+    status_msg = await update.message.reply_text("🚀 جاري إرسال الرسالة لجميع المستخدمين...")
+
+    for uid in all_users_set:
+        try:
+            await context.bot.send_message(chat_id=uid, text=text_to_send, parse_mode="Markdown")
+            success_count += 1
+            await asyncio.sleep(0.05)  # لتفادي حظر التيليجرام بسبب السرعة
+        except Exception as e:
+            fail_count += 1
+            logger.error(f"فشل الإرسال للمستخدم {uid}: {e}")
+
+    await status_msg.edit_text(
+        f"📊 **تقرير الإذاعة:**\n\n"
+        f"• تم الإرسال بنجاح إلى: `{success_count}` مستخدم\n"
+        f"• فشل الإرسال إلى: `{fail_count}` مستخدم",
+        parse_mode="Markdown"
+    )
+
+# أمر الأدمن لتحديد المبلغ ورقم التحقق لزبون معين بدقة
 async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -94,6 +130,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
     user_states[user_id] = "waiting_for_subscription_text"
+    all_users_set.add(user_id)  # تسجيل المستخدم في قائمة البث
     
     age_estimation = estimate_account_age(user_id)
     
@@ -116,6 +153,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
+    all_users_set.add(user_id)
     username = f"@{user.username}" if user.username else "بدون معرف"
     
     if not update.message.photo:
@@ -163,6 +201,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     user_id = update.effective_user.id
+    all_users_set.add(user_id)
     username = f"@{update.effective_user.username}" if update.effective_user.username else "بدون معرف"
     text = msg.text.strip()
     current_state = user_states.get(user_id)
@@ -214,7 +253,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون (بدون حذف الكود نهائياً)
+    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون (دائم وغير قابل للحرق)
     if current_state == "waiting_for_code" or text in custom_profits:
         if text in custom_profits:
             code_info = custom_profits[text]
@@ -226,7 +265,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             profit_amount = code_info["amount"]
 
-            # تم إلغاء حذف الكود (لن يحترق ولن يتم استبعاده أبداً)
+            # عدم حذف الكود، يظل صالحاً ودائماً
             user_states[user_id] = "viewing_balance"
 
             await context.bot.send_message(
@@ -269,6 +308,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = query.message.chat_id
     user = query.from_user
     user_id = user.id
+    all_users_set.add(user_id)
     username = f"@{user.username}" if user.username else "بدون معرف"
 
     # معالجة أزرار الأدمن الخاصة بقبول أو رفض الإيصال
@@ -384,11 +424,12 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("setprofit", set_profit))
+    app.add_handler(CommandHandler("broadcast", broadcast_message))  # أمر إرسال رسالة للجميع
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن والأكواد دائمة وغير قابلة للحرق...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن مع أمر الإذاعة للأدمن...")
     app.run_polling()
 
 if __name__ == "__main__":
