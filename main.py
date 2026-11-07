@@ -12,8 +12,8 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن المعتمد للبوت
-TOKEN = "9203200853:AAHQiwiS5SBWNmel4U4qySnnpVXpOcRirQ0"
+# التوكن الجديد المعتمد للبوت
+TOKEN = "9056801472:AAHsVQ8Iwl_pa34_4gAYxakvY5y-r-vEjzU"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
 
@@ -242,7 +242,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بنظام السحب وأكواد التحقق فقط...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالتوكن الجديد وجاهز تماماً...")
     app.run_polling()
 
 if __name__ == "__main__":
