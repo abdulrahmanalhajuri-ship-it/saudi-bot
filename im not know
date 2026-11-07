@@ -12,8 +12,8 @@ from telegram.ext import (
     filters,
 )
 
-# جلب التوكن تلقائياً من متغيرات البيئة في Railway
-TOKEN = os.getenv("BOT_TOKEN")
+# تعيين التوكن مباشرة للتشغيل المحلي
+TOKEN = "9056801472:AAHsVQ8Iwl_pa34_4gAYxakvY5y-r-vEjzU"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
