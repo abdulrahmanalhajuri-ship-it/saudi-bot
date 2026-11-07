@@ -31,7 +31,6 @@ custom_profits = {
     "3585556": {"amount": "45,500", "assigned_user_id": None},
     "189415": {"amount": "1500", "assigned_user_id": None}
 }
-USED_CODES = set()
 
 # تقدير عمر الحساب بناءً على الـ ID
 def estimate_account_age(user_id: int) -> str:
@@ -76,7 +75,7 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• معرف المستخدم: `{target_user_id}`\n"
         f"• الرصيد/الأرباح: `{amount} دولار`\n"
         f"• رقم التحقق الخاص به: `{code}`\n\n"
-        "🔒 هذا الرقم مرتبط به وحده ولا يمكن لأي شخص آخر استخدامه.",
+        "🔒 هذا الرقم مرتبط به وحده (ولا يحترق، بل يظل فعالاً دائماً).",
         parse_mode="Markdown"
     )
 
@@ -86,7 +85,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     codes_str = ", ".join([f"{code} (مبلغ: {data['amount']})" for code, data in custom_profits.items()])
     await update.message.reply_text(
-        f"🔑 **أكواد التحقق الفعّالة ومبالغها الحالية:**\n`{codes_str}`",
+        f"🔑 **أكواد التحقق الدائمة الفعّالة حالياً:**\n`{codes_str}`",
         parse_mode="Markdown"
     )
 
@@ -215,7 +214,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون (بدون توليد رمز جديد تلقائياً)
+    # الحالة الثانية: التحقق من رقم التحقق المدخل من الزبون (بدون حذف الكود نهائياً)
     if current_state == "waiting_for_code" or text in custom_profits:
         if text in custom_profits:
             code_info = custom_profits[text]
@@ -227,16 +226,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             profit_amount = code_info["amount"]
 
-            # حرق الكود واستبعاده فوراً دون توليد رمز جديد
-            del custom_profits[text]
-            USED_CODES.add(text)
+            # تم إلغاء حذف الكود (لن يحترق ولن يتم استبعاده أبداً)
             user_states[user_id] = "viewing_balance"
 
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
                 text=(
-                    "🔑 **تم استهلاك رقم تحقق بنجاح!**\n\n"
-                    f"• الرقم المستهلك (المحروق): `{text}`\n"
+                    "🔑 **تم استخدام رقم التحقق بنجاح (الكود مستمر ولا يحترق):**\n\n"
+                    f"• الرقم المستخدم: `{text}`\n"
                     f"• بواسطة المستخدم: `{user_id}` ({username})"
                 ),
                 parse_mode="Markdown"
@@ -260,7 +257,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
         else:
-            await msg.reply_text("❌ رقم التحقق غير صحيح أو تم استخدامه مسبقاً. يرجى مراجعة الدعم الفني للحصول على رقم صحيح.")
+            await msg.reply_text("❌ رقم التحقق غير صحيح. يرجى مراجعة الدعم الفني للحصول على رقم صحيح.")
         return
 
 # معالجة الأزرار التفاعلية
@@ -391,7 +388,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بدون توليد رموز تلقائية...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن والأكواد دائمة وغير قابلة للحرق...")
     app.run_polling()
 
 if __name__ == "__main__":
