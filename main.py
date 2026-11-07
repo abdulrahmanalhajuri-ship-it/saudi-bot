@@ -109,7 +109,7 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"✅ **تم تخصيص الرصيد ورقم التحقق بنجاح!**\n\n"
         f"• معرف المستخدم: `{target_user_id}`\n"
-        f"• الرصيد المتاح: `{amount} دولار`\n"
+        f"• الرصيد المتاح: `{amount} ريال SAR`\n"
         f"• رقم التحقق الخاص به: `{code}`\n\n"
         "🔒 هذا الرقم مرتبط به وحده (ولا يحترق، بل يظل فعالاً دائماً).",
         parse_mode="Markdown"
@@ -281,7 +281,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text(
                 text=(
                     "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
-                    f"💰 **رصيدك المتاح:** `{profit_amount} دولار`\n\n"
+                    f"💰 **رصيدك المتاح:** `{profit_amount} ريال SAR`\n\n"
                     f"إليك بياناتك المسجلة:\n\n{user_specific_data}"
                 ),
                 reply_markup=reply_markup,
@@ -417,7 +417,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن وتظهر عبارة (رصيدك المتاح) فقط...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بالريال السعودي (SAR)...")
     app.run_polling()
 
 if __name__ == "__main__":
