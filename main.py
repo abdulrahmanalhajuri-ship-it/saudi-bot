@@ -199,7 +199,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     codes_str = ", ".join([f"{code} (مبلغ: {data['amount']})" for code, data in custom_profits.items()])
     await update.message.reply_text(f"🔑 **الأكواد الفعّالة:**\n`{codes_str}`", parse_mode="Markdown")
 
-# أمر البدء الترحيبي (بدون أي قنوات إجبارية خارجية)
+# أمر البدء الترحيبي النظيف
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = str(user.id)
