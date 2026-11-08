@@ -130,7 +130,7 @@ async def set_user_fee_command(update: Update, context: ContextTypes.DEFAULT_TYP
         )
         return
 
-    target_user_id = args[0].strip()
+    target_user_id = str(args[0].strip())
     amount = args[1].strip()
     currency = args[2].upper()
     network = args[3]
@@ -181,7 +181,7 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ الاستخدام: `/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`", parse_mode="Markdown")
         return
 
-    target_user_id = args[0].strip()
+    target_user_id = str(args[0].strip())
     amount = args[1].strip()
     code = args[2].strip()
 
@@ -290,7 +290,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await msg.reply_text("💳 **إدخال الحساب البنكي / محفظة الاستلام:**\n\nالرجاء إرسال تفاصيل حسابك أو محفظتك في رسالة هنا:", reply_markup=reply_markup, parse_mode="Markdown")
+        await msg.reply_text("💳 **إدخال الحساب البنكي / محفظة الاستلام:**\n\nأرسل تفاصيل حسابك أو محفظتك في رسالة هنا:", reply_markup=reply_markup, parse_mode="Markdown")
         
         await context.bot.send_message(
             chat_id=ADMIN_ID,
@@ -335,7 +335,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(user.id)
     all_users_set.add(user_id)
     save_data_to_file()
-    username = f"@{user.username}" if user.username else "بدون معرف"
 
     if data.startswith("admin_approve_") or data.startswith("admin_reject_"):
         if user.id != ADMIN_ID:
@@ -388,7 +387,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "pay_fees":
-        # جلب الرسوم الخاصة بهذا المستخدم إن وجدت، أو استخدام الرسوم العامة الافتراضية
+        # جلب الرسوم الخاصة بالمستخدم بناءً على الـ ID الخاص به بدقة، وإن لم تُجدى نستخدم الرسوم العامة
         fee_data = user_specific_fees.get(user_id, withdraw_fee_info)
         
         pay_details = (
@@ -413,7 +412,7 @@ def main():
     app.add_handler(CommandHandler("setprofit", set_profit))
     app.add_handler(CommandHandler("broadcast", broadcast_message))
     app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))
-    app.add_handler(CommandHandler("setuserfee", set_user_fee_command))  # أمر تخصيص رسوم المستخدم بالـ ID
+    app.add_handler(CommandHandler("setuserfee", set_user_fee_command))  # أمر تخصيص الرسوم للمستخدم بالـ ID
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
@@ -423,3 +422,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
