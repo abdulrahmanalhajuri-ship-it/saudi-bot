@@ -12,8 +12,8 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن المعتمد للبوت
-TOKEN = "9014957370:AAHEFAt-9tIbs2qJvUPA-H4QBB2mn4f6v4M"
+# التوكن الجديد المعتمد للبوت
+TOKEN = "9014957370:AAHy4p48M5g6tcoU9240X3QoEiQWp0Zlw3c"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
 
@@ -416,7 +416,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة بدون روابط خارجية...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بالتوكن الجديد وبأعلى كفاءة...")
     app.run_polling()
 
 if __name__ == "__main__":
