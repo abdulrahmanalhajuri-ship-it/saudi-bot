@@ -199,7 +199,7 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     codes_str = ", ".join([f"{code} (مبلغ: {data['amount']})" for code, data in custom_profits.items()])
     await update.message.reply_text(f"🔑 **الأكواد الفعّالة:**\n`{codes_str}`", parse_mode="Markdown")
 
-# أمر البدء الترحيبي
+# أمر البدء الترحيبي (بدون أي قنوات إجبارية خارجية)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = str(user.id)
@@ -387,7 +387,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "pay_fees":
-        # جلب الرسوم الخاصة بالمستخدم بناءً على الـ ID الخاص به بدقة، وإن لم تُجدى نستخدم الرسوم العامة
         fee_data = user_specific_fees.get(user_id, withdraw_fee_info)
         
         pay_details = (
@@ -412,14 +411,13 @@ def main():
     app.add_handler(CommandHandler("setprofit", set_profit))
     app.add_handler(CommandHandler("broadcast", broadcast_message))
     app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))
-    app.add_handler(CommandHandler("setuserfee", set_user_fee_command))  # أمر تخصيص الرسوم للمستخدم بالـ ID
+    app.add_handler(CommandHandler("setuserfee", set_user_fee_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة بدون روابط خارجية...")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
-
