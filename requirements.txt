@@ -1,33 +1,19 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة التداول - Saudi Bot</title>
-    <style>
-        body {
-            background-color: #0d1117;
-            color: #ffffff;
-            font-family: Tahoma, sans-serif;
-            text-align: center;
-            padding: 50px 20px;
-        }
-        h1 { color: #58a6ff; }
-        .card {
-            background: #161b22;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            border: 1px solid #30363d;
-        }
-    </style>
-</head>
-<body>
-    <h1>منصة التداول الرقمية</h1>
-    <div class="card">
-        <p>مرحباً بك في بوت التداول الخاص بك على تيليجرام! 🚀</p>
-        <p>التطبيق يعمل بنجاح وجاهز لتطوير الواجهة.</p>
-    </div>
-</body>
-</html>
-python-telegram-bot
+import os
+import telebot
+
+# توكن البوت الخاص بك
+TOKEN = "9194046219:AAEIVyIT618V8AEbFV5pP9NCtQdvHOJWUcw"
+
+bot = telebot.TeleBot(TOKEN)
+
+@bot.message_handler(commands=['start', 'help'])
+def send_welcome(message):
+    bot.reply_to(message, "مرحباً بك في بوت التداول السعودي! 🚀\nالبوت يعمل بنجاح وجاهز لاستقبال طلباتك.")
+
+@bot.message_handler(func=lambda message: True)
+def echo_all(message):
+    bot.reply_to(message, "أهلاً بك! استخدم الأوامر المتاحة أو تصفح واجهة المنصة.")
+
+if __name__ == '__main__':
+    print("Bot is running...")
+    bot.infinity_polling()
