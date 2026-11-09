@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة التداول</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Tahoma, sans-serif;
+        }
+        body {
+            background-color: #0b132b;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        /* الشريط العلوي */
+        header {
+            background-color: #1c2541;
+            padding: 15px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #3a506b;
+        }
+        header span {
+            color: #4ea8de;
+        }
+        /* محتوى الصفحات */
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            margin-bottom: 70px; /* مسافة لكي لا يغطي الشريط السفلي المحتوى */
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* تصميم الأزرار الفرعية داخل كل صفحة */
+        .sub-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .sub-btn {
+            background-color: #1c2541;
+            color: white;
+            border: 1px solid #3a506b;
+            padding: 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: 0.3s;
+            text-align: center;
+        }
+        .sub-btn:hover {
+            background-color: #3a506b;
+            border-color: #4ea8de;
+        }
+        /* الشريط السفلي (مطابق لصورتك) */
+        nav.bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #1c2541;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 8px 0;
+            border-top: 1px solid #3a506b;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+        }
+        .nav-item {
+            background: none;
+            border: none;
+            color: #8d99ae;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            flex: 1;
+        }
+        .nav-item span.icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        /* الزر المفعل حالياً */
+        .nav-item.active {
+            color: #ffffff;
+            background-color: #2b3a67;
+            padding: 6px;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- الشريط العلوي: اسم قناة التليجرام -->
+    <header>
+        قناة التليجرام: <span>@YourChannelName</span>
+    </header>
+
+    <!-- منطقة محتوى الصفحات والأزرار الداخلية -->
+    <div class="content-area">
+        
+        <!-- 1. الصفحة الرئيسية -->
+        <div id="home" class="tab-content active">
+            <h2>🏠 الصفحة الرئيسية</h2>
+            <p style="margin-top: 10px; color: #a5b4fc;">مرحباً بك في منصة التداول الرسمية.</p>
+            <div class="sub-buttons">
+                <button class="sub-btn" onclick="alert('تم الانتقال إلى إشارات التداول')">📊 إشارات التداول اليومية</button>
+                <button class="sub-btn" onclick="alert('تم الانتقال إلى تحليل السوق')">💹 تحليل السوق المباشر</button>
+            </div>
+        </div>
+
+        <!-- 2. الباقات -->
+        <div id="packages" class="tab-content">
+            <h2>📦 الباقات المتاحة</h2>
+            <p style="margin-top: 10px; color: #a5b4fc;">اختر الباقة المناسبة للاشتراك:</p>
+            <div class="sub-buttons">
+                <button class="sub-btn">⭐ الباقة الشهرية الأساسية</button>
+                <button class="sub-btn">🌟 الباقة السنوية المميزة</button>
+                <button class="sub-btn">💎 باقة VIP الخاصة</button>
+            </div>
+        </div>
+
+        <!-- 3. الدعم الفني -->
+        <div id="support" class="tab-content">
+            <h2>🛟 الدعم الفني</h2>
+            <p style="margin-top: 10px; color: #a5b4fc;">فريق الدعم متواجد لمساعدتك 24/7.</p>
+            <div class="sub-buttons">
+                <button class="sub-btn" onclick="window.open('https://t.me/YourSupportBot', '_blank')">💬 التواصل مع خدمة العملاء</button>
+                <button class="sub-btn">❓ الأسئلة الشائعة</button>
+            </div>
+        </div>
+
+        <!-- 4. الآراء -->
+        <div id="reviews" class="tab-content">
+            <h2>⭐ آراء المشتركين</h2>
+            <p style="margin-top: 10px; color: #a5b4fc;">قصص نجاح وتجارب أعضاء قناتنا.</p>
+            <div class="sub-buttons">
+                <button class="sub-btn">📜 عرض أرباح الأعضاء</button>
+            </div>
+        </div>
+
+        <!-- 5. السحب -->
+        <div id="withdraw" class="tab-content">
+            <h2>💸 السحب والأرباح</h2>
+            <p style="margin-top: 10px; color: #a5b4fc;">إدارة رصيدك وعمليات السحب.</p>
+            <div class="sub-buttons">
+                <button class="sub-btn">💳 طلب سحب أرباح جديد</button>
+                <button class="sub-btn">📋 سجل عمليات السحب</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- الشريط السفلي (مطابق لترتيب الأزرار في صورتك) -->
+    <nav class="bottom-nav">
+        <button class="nav-item" onclick="switchTab('withdraw', this)">
+            <span class="icon">💸</span>
+            السحب
+        </button>
+        <button class="nav-item" onclick="switchTab('reviews', this)">
+            <span class="icon">⭐</span>
+            الآراء
+        </button>
+        <button class="nav-item" onclick="switchTab('support', this)">
+            <span class="icon">🛟</span>
+            الدعم الفني
+        </button>
+        <button class="nav-item" onclick="switchTab('packages', this)">
+            <span class="icon">📦</span>
+            الباقات
+        </button>
+        <button class="nav-item active" onclick="switchTab('home', this)">
+            <span class="icon">🏠</span>
+            الصفحة
+        </button>
+    </nav>
+
+    <script>
+        // دالة التبديل بين الصفحات وإدارة الأزرار النشطة
+        function switchTab(tabId, buttonElement) {
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            buttonElement.classList.add('active');
+        }
+    </script>
+
+</body>
+</html>
