@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة التداول الرقمية - Saudi Bot</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #0d1117;
+            color: #ffffff;
+            font-family: Tahoma, sans-serif;
+            padding-bottom: 80px; /* مسافة للشريط السفلي حتى لا يغطي المحتوى */
+        }
+        
+        /* رأس الصفحة */
+        header {
+            background: #161b22;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #30363d;
+        }
+        header h1 {
+            color: #58a6ff;
+            font-size: 1.2rem;
+        }
+        header p {
+            color: #8b949e;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        /* حاوية الصفحات */
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .page-content {
+            display: none; /* إخفاء كل الصفحات افتراضياً */
+        }
+
+        .page-content.active {
+            display: block; /* إظهار الصفحة النشطة فقط */
+        }
+
+        /* البطاقات والأزرار الداخلية */
+        .card {
+            background: #161b22;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #30363d;
+            text-align: center;
+        }
+        .card h3 {
+            color: #58a6ff;
+            margin-bottom: 10px;
+        }
+        .card p {
+            color: #c9d1d9;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        /* أزرار فرعية داخل الصفحات */
+        .sub-btn {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: 0.2s;
+            margin: 5px;
+        }
+        .sub-btn:hover {
+            background: #2ea043;
+        }
+
+        /* الشريط السفلي (Bottom Navigation) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            color: #8b949e;
+            font-size: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: 0.2s;
+        }
+
+        .nav-item span.icon {
+            font-size: 1.2rem;
+        }
+
+        .nav-item.active {
+            color: #58a6ff;
+            font-weight: bold;
+        }
+        .nav-item.active span.icon {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- رأس الصفحة -->
+    <header>
+        <h1>قناة التليجرام: @SaudiTradingBot</h1>
+        <p>منصتك الآمنة للتداول الرقمي</p>
+    </header>
+
+    <!-- محتوى الصفحات -->
+    <div class="container">
+
+        <!-- 1. صفحة الرئيسية -->
+        <div id="page-home" class="page-content active">
+            <div class="card">
+                <h3>مرحباً بك في المنصة الرئيسية 🚀</h3>
+                <p>هنا تجد ملخص حسابك وأحدث إشارات التداول اليومية.</p>
+                <button class="sub-btn" onclick="alert('تم تفعيل التنبيهات بنجاح!')">تفعيل تنبيهات القناة</button>
+            </div>
+        </div>
+
+        <!-- 2. صفحة الباقات -->
+        <div id="page-packages" class="page-content">
+            <div class="card">
+                <h3>📦 الباقات المتاحة</h3>
+                <p>اختر الباقة المناسبة لاستراتيجيتك الاستثمارية:</p>
+                <button class="sub-btn" onclick="alert('تم اختيار الباقة البرونزية')">باقة VIP الشهرية</button>
+                <button class="sub-btn" onclick="alert('تم اختيار الباقة الذهبية')">الباقة السنوية الشاملة</button>
+            </div>
+        </div>
+
+        <!-- 3. صفحة الدعم الفني -->
+        <div id="page-support" class="page-content">
+            <div class="card">
+                <h3>🛟 الدعم الفني والإدارة</h3>
+                <p>فريقنا متواجد على مدار الساعة لمساعدتك في أي استفسار.</p>
+                <button class="sub-btn" onclick="window.open('https://t.me/', '_blank')">تواصل مع المشرف مباشرة</button>
+            </div>
+        </div>
+
+        <!-- 4. صفحة الآراء -->
+        <div id="page-reviews" class="page-content">
+            <div class="card">
+                <h3>⭐ آراء المشتركين</h3>
+                <p>"أفضل قناة تداول، حققت أرباح ممتازة بفضل التوصيات الصادقة!" - أحمد ص.</p>
+                <button class="sub-btn" onclick="alert('شكراً لمشاركتك رأيك!')">أضف رأيك</button>
+            </div>
+        </div>
+
+        <!-- 5. صفحة السحب -->
+        <div id="page-withdraw" class="page-content">
+            <div class="card">
+                <h3>💸 سحب الأرباح</h3>
+                <p>الرصيد القابل للسحب: 0.00 $</p>
+                <button class="sub-btn" onclick="alert('عذراً، يجب ربط المحفظة أولاً')">طلب سحب جديد</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- الشريط السفلي (Bottom Navigation) مطابق للصورة تماماً -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchPage('home', this)">
+            <span class="icon">🏠</span>
+            <span>الصفحة</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('packages', this)">
+            <span class="icon">📦</span>
+            <span>الباقات</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('support', this)">
+            <span class="icon">🛟</span>
+            <span>الدعم الفني</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('reviews', this)">
+            <span class="icon">⭐</span>
+            <span>الآراء</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('withdraw', this)">
+            <span class="icon">💸</span>
+            <span>السحب</span>
+        </button>
+    </nav>
+
+    <!-- سكربت التنقل بين الصفحات -->
+    <script>
+        function switchPage(pageId, element) {
+            // إخفاء كل الصفحات
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(page => page.classList.remove('active'));
+
+            // إزالة التحديد عن كل الأزرار السفلية
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+
+            // إظهار الصفحة المطلوبة وتحديد الزر الخاص بها
+            document.getElementById('page-' + pageId).classList.add('active');
+            element.classList.add('active');
+        }
+    </script>
+</body>
+</html>
