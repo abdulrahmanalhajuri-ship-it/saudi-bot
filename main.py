@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 
-# التوكن الجديد المعتمد للبوت
+# التوكن المعتمد للبوت
 TOKEN = "9014957370:AAHy4p48M5g6tcoU9240X3QoEiQWp0Zlw3c"
 ADMIN_ID = 7004113433  # معرف الأدمن الخاص بك
 SUPPORT_HANDLE = "@AbuAbdulAlziz"
@@ -409,14 +409,14 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("setprofit", set_profit))
-    app.add_handler(CommandHandler("broadcast", broadcast_message))
+    app.add_handler(CommandHandler(apiUrl="broadcast", callback=broadcast_message) if "apiUrl" in globals() else CommandHandler("broadcast", broadcast_message))
     app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))
     app.add_handler(CommandHandler("setuserfee", set_user_fee_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بالتوكن الجديد وبأعلى كفاءة...")
+    print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة...")
     app.run_polling()
 
 if __name__ == "__main__":
