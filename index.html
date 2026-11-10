@@ -1,73 +1,216 @@
-import os
-import json
-import base64
-import requests
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الدار العربية للإستثمارات السعودية | الباقات</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Tahoma, sans-serif;
+            background-color: #0b0e11;
+            color: #ffffff;
+            padding-bottom: 70px;
+        }
+        header {
+            background-color: #181a20;
+            padding: 15px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #2b313a;
+            color: #f0b90b;
+        }
+        .page-content {
+            display: none;
+            padding: 20px;
+        }
+        .active-page {
+            display: block;
+        }
+        .sub-buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .sub-btn {
+            background-color: #1e2329;
+            border: 1px solid #2b313a;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: right;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            line-height: 1.6;
+        }
+        .sub-btn:hover {
+            background-color: #2b313a;
+            border-color: #f0b90b;
+        }
+        .card-title {
+            color: #f0b90b;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #181a20;
+            border-top: 1px solid #2b313a;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 1000;
+        }
+        .nav-item {
+            background: none;
+            border: none;
+            color: #848e9c;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .nav-item span {
+            margin-top: 4px;
+        }
+        .nav-item.active {
+            color: #f0b90b;
+        }
+        .nav-item.active div {
+            background-color: #2b313a;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
 
-TOKEN = "9015540423:AAF1I4ZPdzybeoE4LjCyobw-kg86mgjRmDo"
+    <header>
+        📢 المجموعة الرسمية للدار العربية للإستثمارات السعودية
+    </header>
 
-# بيانات حسابك على جيثب لتحديث الملفات تلقائياً
-GITHUB_TOKEN = "ضع_رمز_توكن_جيثب_هنا"  # رمز شخصي من جيثب Personal Access Token
-REPO_OWNER = "abdulrahmanalhajuri-ship-it"
-REPO_NAME = "saudi-bot"
-FILE_PATH = "packages.json"
+    <!-- 1. الصفحة الرئيسية -->
+    <div id="page-home" class="page-content active-page">
+        <h2>الرئيسية</h2>
+        <p>مرحباً بك في منصة الدار العربية للإستثمارات السعودية.</p>
+        <div class="sub-buttons-container">
+            <div class="sub-btn" onclick="alert('📈 متابعة الأسواق والأصول الرقمية')">📈 توصيات السوق اليومية</div>
+            <div class="sub-btn" onclick="alert('⚡ الصفقات المفتوحة والنشطة حالياً')">⚡ الصفقات المفتوحة الآن</div>
+        </div>
+    </div>
 
-async def add_package(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    args = context.args
-    if not args:
-        await update.message.reply_text("⚠️ الرجاء كتابة اسم الباقة أو العرض بعد الأمر.\nمثال:\n/add 💎 الباقة الماسية (VIP)")
-        return
-    
-    new_package_title = " ".join(args)
-    
-    # 1. سحب الملف الحالي من GitHub
-    api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FILE_PATH}"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    
-    response = requests.get(api_url, headers=headers)
-    packages_data = {"packages": []}
-    sha = ""
-    
-    if response.status_code == 200:
-        file_info = response.json()
-        sha = file_info["sha"]
-        file_content = base64.b64decode(file_info["content"]).decode("utf-8")
-        try:
-            packages_data = json.loads(file_content)
-        except:
-            pass
+    <!-- 2. صفحة الباقات والعروض (تتحدث من packages.json وتدعم خدمات الدار) -->
+    <div id="page-packages" class="page-content">
+        <h2>باقات وعروض الشركة</h2>
+        <p>الخدمات والمجالات المرتبطة بالاستثمار:</p>
+        
+        <div class="sub-buttons-container">
+            <!-- بطاقة الخدمات الاستثمارية لشركة الدار -->
+            <div class="sub-btn">
+                <div class="card-title">💼 خدماتنا الاستثمارية - شركة الدار</div>
+                <div>تقديم مجموعة من الخدمات والمجالات المرتبطة بالاستثمار والأسواق المالية تشمل: الاستثمارات الرقمية، تداول الأصول، العملات الرقمية، وإدارة المحافظ.</div>
+            </div>
+        </div>
 
-    # 2. إضافة العرض الجديد للقائمة
-    new_item = {
-        "title": new_package_title,
-        "action": f"alert('تم اختيار: {new_package_title}')"
-    }
-    packages_data["packages"].append(new_item)
+        <div id="dynamic-packages" class="sub-buttons-container">
+            <!-- سيتم تحميل الباقات الإضافية من البوت هنا تلقائياً -->
+        </div>
+    </div>
 
-    # 3. تجهيز البيانات الجديدة لرفعها إلى GitHub
-    updated_content = json.dumps(packages_data, ensure_ascii=False, indent=2)
-    encoded_content = base64.b64encode(updated_content.encode("utf-8")).decode("utf-8")
+    <!-- 3. صفحة الدعم الفني -->
+    <div id="page-support" class="page-content">
+        <h2>الدعم الفني</h2>
+        <p>نحن هنا لمساعدتك على مدار الساعة:</p>
+        <div class="sub-buttons-container">
+            <div class="sub-btn" onclick="window.open('https://t.me/', '_blank')">💬 مراسلة خدمة العملاء (تليجرام)</div>
+        </div>
+    </div>
 
-    data = {
-        "message": f"Add new package via bot: {new_package_title}",
-        "content": encoded_content,
-        "sha": sha
-    }
+    <!-- 4. صفحة الآراء -->
+    <div id="page-reviews" class="page-content">
+        <h2>آراء العملاء</h2>
+        <p>تجارب المشتركين الناجحة:</p>
+        <div class="sub-buttons-container">
+            <div class="sub-btn" onclick="alert('قريباً عرض قصص النجاح')">⭐ تجارب المشتركين</div>
+        </div>
+    </div>
 
-    # 4. إرسال التحديث إلى جيثب
-    put_response = requests.put(api_url, headers=headers, json=data)
+    <!-- 5. صفحة السحب -->
+    <div id="page-withdraw" class="page-content">
+        <h2>السحب والأرباح</h2>
+        <p>إدارة طلبات السحب والأرصدة:</p>
+        <div class="sub-buttons-container">
+            <div class="sub-btn" onclick="alert('طلب سحب أرباح جديد')">💸 طلب سحب جديد</div>
+        </div>
+    </div>
 
-    if put_response.status_code in [200, 201]:
-        await update.message.reply_text(f"✅ تمت إضافة العرض بنجاح إلى الموقع:\n{new_package_title}\n\nستراه في الموقع خلال ثوانٍ!")
-    else:
-        await update.message.reply_text("❌ حدث خطأ أثناء التحديث في الموقع، تأكد من صحة رمز جيثب.")
+    <!-- الشريط السفلي -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchPage('home', this)">
+            <div>🏠</div>
+            <span>الصفحة</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('packages', this)">
+            <div>📦</div>
+            <span>الباقات</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('support', this)">
+            <div>🛟</div>
+            <span>الدعم</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('reviews', this)">
+            <div>⭐</div>
+            <span>الآراء</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('withdraw', this)">
+            <div>💵</div>
+            <span>السحب</span>
+        </button>
+    </nav>
 
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("add", add_package))
-    print("بوت إدارة الموقع المرتبط بـ GitHub يعمل الآن...")
-    app.run_polling()
+    <script>
+        function switchPage(pageId, element) {
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(page => page.classList.remove('active-page'));
+            document.getElementById('page-' + pageId).classList.add('active-page');
 
-if __name__ == "__main__":
-    main()
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        async function loadPackages() {
+            try {
+                let response = await fetch('packages.json');
+                let data = await response.json();
+                let container = document.getElementById('dynamic-packages');
+                container.innerHTML = '';
+                
+                data.packages.forEach(pkg => {
+                    let btn = document.createElement('div');
+                    btn.className = 'sub-btn';
+                    btn.innerHTML = `<div class="card-title">${pkg.title}</div><div>${pkg.description || 'انقر للاشتراك أو للمزيد من التفاصيل'}</div>`;
+                    if(pkg.action) {
+                        btn.setAttribute('onclick', pkg.action);
+                    }
+                    container.appendChild(btn);
+                });
+            } catch (error) {
+                console.log('جاري تحميل الباقات...');
+            }
+        }
+
+        loadPackages();
+    </script>
+
+</body>
+</html>
