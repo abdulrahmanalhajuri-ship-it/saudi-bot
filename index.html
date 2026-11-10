@@ -24,15 +24,32 @@
         .page-content {
             display: none;
             padding: 20px;
+            text-align: center;
         }
         .active-page {
             display: block;
+        }
+        /* تنسيق حاوية الصورة في المنتصف */
+        .center-image-container {
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .center-image-container img {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 2px solid #f0b90b;
+            object-fit: cover;
+            box-shadow: 0 4px 15px rgba(240, 185, 11, 0.2);
         }
         .sub-buttons-container {
             display: flex;
             flex-direction: column;
             gap: 12px;
             margin-top: 20px;
+            text-align: right;
         }
         .sub-btn {
             background-color: #1e2329;
@@ -101,6 +118,12 @@
     <!-- 1. الصفحة الرئيسية -->
     <div id="page-home" class="page-content active-page">
         <h2>الرئيسية</h2>
+        
+        <!-- صورة في منتصف الصفحة الرئيسية -->
+        <div class="center-image-container">
+            <img src="https://i.ibb.co/3W68V5m/logo.png" alt="شعار الشركة" id="main-logo" onerror="this.src='https://via.placeholder.com/140?text=Aldar'">
+        </div>
+
         <p>مرحباً بك في منصة الدار العربية للإستثمارات السعودية.</p>
         <div class="sub-buttons-container">
             <div class="sub-btn" onclick="alert('📈 متابعة الأسواق والأصول الرقمية')">📈 توصيات السوق اليومية</div>
@@ -108,13 +131,12 @@
         </div>
     </div>
 
-    <!-- 2. صفحة الباقات والعروض (تتحدث من packages.json وتدعم خدمات الدار) -->
+    <!-- 2. صفحة الباقات والعروض -->
     <div id="page-packages" class="page-content">
         <h2>باقات وعروض الشركة</h2>
         <p>الخدمات والمجالات المرتبطة بالاستثمار:</p>
         
         <div class="sub-buttons-container">
-            <!-- بطاقة الخدمات الاستثمارية لشركة الدار -->
             <div class="sub-btn">
                 <div class="card-title">💼 خدماتنا الاستثمارية - شركة الدار</div>
                 <div>تقديم مجموعة من الخدمات والمجالات المرتبطة بالاستثمار والأسواق المالية تشمل: الاستثمارات الرقمية، تداول الأصول، العملات الرقمية، وإدارة المحافظ.</div>
@@ -168,7 +190,7 @@
             <span>الدعم</span>
         </button>
         <button class="nav-item" onclick="switchPage('reviews', this)">
-            <div>⭐</div>
+            <span>⭐</span>
             <span>الآراء</span>
         </button>
         <button class="nav-item" onclick="switchPage('withdraw', this)">
