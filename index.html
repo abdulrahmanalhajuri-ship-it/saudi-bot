@@ -10,9 +10,8 @@
             font-family: Tahoma, sans-serif;
             background-color: #0b0e11;
             color: #ffffff;
-            padding-bottom: 70px; /* مساحة للشريط السفلي حتى لا يغطي المحتوى */
+            padding-bottom: 70px;
         }
-        /* الهيدر أو اسم قناة التليجرام في الأعلى */
         header {
             background-color: #181a20;
             padding: 15px;
@@ -22,7 +21,6 @@
             border-bottom: 1px solid #2b313a;
             color: #f0b90b;
         }
-        /* محتوى الصفحات */
         .page-content {
             display: none;
             padding: 20px;
@@ -30,7 +28,6 @@
         .active-page {
             display: block;
         }
-        /* تصميم الأزرار الفرعية داخل الصفحة */
         .sub-buttons-container {
             display: flex;
             flex-direction: column;
@@ -52,7 +49,6 @@
             background-color: #2b313a;
             border-color: #f0b90b;
         }
-        /* الشريط السفلي (Bottom Navigation) */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -91,7 +87,6 @@
 </head>
 <body>
 
-    <!-- اسم القناة / الهيدر العلوي -->
     <header>
         📢 قناة التليجرام: عالم الكريبتو | Crypto World
     </header>
@@ -106,13 +101,12 @@
         </div>
     </div>
 
-    <!-- 2. صفحة الباقات -->
+    <!-- 2. صفحة الباقات (تتحدث تلقائياً من ملف packages.json) -->
     <div id="page-packages" class="page-content">
-        <h2>الباقات الاشتراكات</h2>
+        <h2>باقات الاشتراكات والعروض</h2>
         <p>اختر الباقة المناسبة لك للانضمام إلى VIP:</p>
-        <div class="sub-buttons-container">
-            <div class="sub-btn" onclick="alert('تم اختيار الباقة الشهرية')">🥉 الباقة الشهرية (VIP)</div>
-            <div class="sub-btn" onclick="alert('تم اختيار الباقة السنوية')">🥇 الباقة السنوية (VIP)</div>
+        <div id="dynamic-packages" class="sub-buttons-container">
+            <!-- سيتم تحميل الباقات هنا تلقائياً -->
         </div>
     </div>
 
@@ -145,7 +139,7 @@
         </div>
     </div>
 
-    <!-- الشريط السفلي (مطابق للشريط في الصورة) -->
+    <!-- الشريط السفلي -->
     <nav class="bottom-nav">
         <button class="nav-item active" onclick="switchPage('home', this)">
             <div>🏠</div>
@@ -170,22 +164,40 @@
     </nav>
 
     <script>
-        // دالة التنقل بين الصفحات وتغيير الزر النشط
         function switchPage(pageId, element) {
-            // إخفاء كل الصفحات
             const pages = document.querySelectorAll('.page-content');
             pages.forEach(page => page.classList.remove('active-page'));
 
-            // إظهار الصفحة المطلوبة
             document.getElementById('page-' + pageId).classList.add('active-page');
 
-            // إزالة التحديد عن كل أزرار الشريط السفلي
             const navItems = document.querySelectorAll('.nav-item');
             navItems.forEach(item => item.classList.remove('active'));
 
-            // تحديد الزر الحالي
             element.classList.add('active');
         }
+
+        // دالة جلب الباقات تلقائياً من ملف packages.json
+        async function loadPackages() {
+            try {
+                let response = await fetch('packages.json');
+                let data = await response.json();
+                let container = document.getElementById('dynamic-packages');
+                container.innerHTML = '';
+                
+                data.packages.forEach(pkg => {
+                    let btn = document.createElement('div');
+                    btn.className = 'sub-btn';
+                    btn.innerText = pkg.title;
+                    btn.setAttribute('onclick', pkg.action);
+                    container.appendChild(btn);
+                });
+            } catch (error) {
+                console.log('جاري تحميل الباقات...');
+            }
+        }
+
+        // تشغيل الدالة عند فتح الصفحة
+        loadPackages();
     </script>
 
 </body>
