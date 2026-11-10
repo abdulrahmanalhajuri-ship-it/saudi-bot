@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة التداول - عالم الكريبتو</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Tahoma, sans-serif;
+            background-color: #0b0e11;
+            color: #ffffff;
+            padding-bottom: 70px; /* مساحة للشريط السفلي حتى لا يغطي المحتوى */
+        }
+        /* الهيدر أو اسم قناة التليجرام في الأعلى */
+        header {
+            background-color: #181a20;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 1px solid #2b313a;
+            color: #f0b90b;
+        }
+        /* محتوى الصفحات */
+        .page-content {
+            display: none;
+            padding: 20px;
+        }
+        .active-page {
+            display: block;
+        }
+        /* تصميم الأزرار الفرعية داخل الصفحة */
+        .sub-buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .sub-btn {
+            background-color: #1e2329;
+            border: 1px solid #2b313a;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .sub-btn:hover {
+            background-color: #2b313a;
+            border-color: #f0b90b;
+        }
+        /* الشريط السفلي (Bottom Navigation) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #181a20;
+            border-top: 1px solid #2b313a;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 1000;
+        }
+        .nav-item {
+            background: none;
+            border: none;
+            color: #848e9c;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .nav-item span {
+            margin-top: 4px;
+        }
+        .nav-item.active {
+            color: #f0b90b;
+        }
+        .nav-item.active div {
+            background-color: #2b313a;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- اسم القناة / الهيدر العلوي -->
+    <header>
+        📢 قناة التليجرام: عالم الكريبتو | Crypto World
+    </header>
+
+    <!-- 1. الصفحة الرئيسية -->
+    <div id="page-home" class="page-content active-page">
+        <h2>الرئيسية</h2>
+        <p>مرحباً بك في منصة التداول الخاصة بنا. تابع أحدث التحليلات والتوصيات.</p>
+        <div class="sub-buttons-container">
+            <div class="sub-btn" onclick="alert('تم النقر على توصيات اليوم')">📈 توصيات السوق اليومية</div>
+            <div class="sub-btn" onclick="alert('تم النقر على الصفقات المفتوحة')">⚡ الصفقات المفتوحة الآن</div>
+        </div>
+    </div>
+
+    <!-- 2. صفحة الباقات -->
+    <div id="page-packages" class="page-content">
+        <h2>الباقات الاشتراكات</h2>
+        <p>اختر الباقة المناسبة لك للانضمام إلى VIP:</p>
+        <div class="sub-buttons-container">
+            <div class="sub-btn" onclick="alert('تم اختيار الباقة الشهرية')">🥉 الباقة الشهرية (VIP)</div>
+            <div class="sub-btn" onclick="alert('تم اختيار الباقة السنوية')">🥇 الباقة السنوية (VIP)</div>
+        </div>
+    </div>
+
+    <!-- 3. صفحة الدعم الفني -->
+    <div id="page-support" class="page-content">
+        <h2>الدعم الفني</h2>
+        <p>نحن هنا لمساعدتك على مدار الساعة:</p>
+        <div class="sub-buttons-container">
+            <div class="sub-btn" onclick="window.open('https://t.me/', '_blank')">💬 مراسلة خدمة العملاء (تليجرام)</div>
+            <div class="sub-btn" onclick="alert('الأسئلة الشائعة قيد التحديث')">❓ الأسئلة الشائعة</div>
+        </div>
+    </div>
+
+    <!-- 4. صفحة الآراء -->
+    <div id="page-reviews" class="page-content">
+        <h2>آراء العملاء</h2>
+        <p>ما يقوله المشتركون عنا:</p>
+        <div class="sub-buttons-container">
+            <div class="sub-btn" onclick="alert('عرض قصص النجاح')">⭐ تجارب المشتركين الناجحة</div>
+        </div>
+    </div>
+
+    <!-- 5. صفحة السحب -->
+    <div id="page-withdraw" class="page-content">
+        <h2>السحب والأرباح</h2>
+        <p>إدارة طلبات السحب والأرصدة:</p>
+        <div class="sub-buttons-container">
+            <div class="sub-btn" onclick="alert('طلب سحب أرباح جديد')">💸 طلب سحب جديد</div>
+            <div class="sub-btn" onclick="alert('سجل العمليات السابقة')">📜 سجل العمليات</div>
+        </div>
+    </div>
+
+    <!-- الشريط السفلي (مطابق للشريط في الصورة) -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchPage('home', this)">
+            <div>🏠</div>
+            <span>الصفحة</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('packages', this)">
+            <div>📦</div>
+            <span>الباقات</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('support', this)">
+            <div>🛟</div>
+            <span>الدعم الفني</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('reviews', this)">
+            <div>⭐</div>
+            <span>الآراء</span>
+        </button>
+        <button class="nav-item" onclick="switchPage('withdraw', this)">
+            <div>💵</div>
+            <span>السحب</span>
+        </button>
+    </nav>
+
+    <script>
+        // دالة التنقل بين الصفحات وتغيير الزر النشط
+        function switchPage(pageId, element) {
+            // إخفاء كل الصفحات
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(page => page.classList.remove('active-page'));
+
+            // إظهار الصفحة المطلوبة
+            document.getElementById('page-' + pageId).classList.add('active-page');
+
+            // إزالة التحديد عن كل أزرار الشريط السفلي
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+
+            // تحديد الزر الحالي
+            element.classList.add('active');
+        }
+    </script>
+
+</body>
+</html>
