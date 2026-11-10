@@ -1,0 +1,29 @@
+name: Run Telegram Admin Bot
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    # يعمل البوت ويتأكد من استمراريته كل ساعة تلقائياً
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install python-telegram-bot
+
+      - name: Run Bot Script
+        run: |
+          python web_admin_bot.py
